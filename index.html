@@ -126,7 +126,7 @@ HTML
     return formatted;
   }
 
-  // 안전한 API 호출 함수 (호환 엔드포인트 자동 폴백)
+  // Quota 제한 처리 기능을 갖춘 Gemini API 호출 함수
   async function callGeminiAPI(payload) {
     const models = ['gemini-1.5-flash', 'gemini-1.5-pro'];
     let lastError = null;
@@ -141,15 +141,23 @@ HTML
         });
 
         const data = await response.json();
+
         if (data.error) {
+          // 무료 티어 사용량 초과(Quota Error) 감지 시
+          if (data.error.message && (data.error.message.includes('quota') || data.error.message.includes('Quota'))) {
+            throw new Error('QUOTA_EXCEEDED');
+          }
           lastError = data.error.message || JSON.stringify(data.error);
-          continue; // 실패 시 다음 모델 후보로 재시도
+          continue;
         }
 
         if (data.candidates && data.candidates[0].content.parts[0].text) {
           return data.candidates[0].content.parts[0].text;
         }
       } catch (err) {
+        if (err.message === 'QUOTA_EXCEEDED') {
+          throw new Error('⏳ 무료 API 사용량(초당/분당 제한)을 초과했습니다. 약 15~30초 후에 다시 버튼을 눌러주세요.');
+        }
         lastError = err.message;
       }
     }
@@ -190,7 +198,7 @@ HTML
       });
       resultBox.innerHTML = formatMarkdown(resultText);
     } catch (err) {
-      resultBox.innerText = '오류 발생: ' + err.message;
+      resultBox.innerText = err.message;
     } finally {
       setTimeout(() => {
         btn.disabled = false;
@@ -308,7 +316,7 @@ HTML
         });
         resultBox.innerHTML = formatMarkdown(resultText);
       } catch (err) {
-        resultBox.innerText = '발음 분석 오류: ' + err.message;
+        resultBox.innerText = err.message;
       }
     };
   }
