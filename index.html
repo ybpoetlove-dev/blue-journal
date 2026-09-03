@@ -165,6 +165,7 @@ HTML
     btn.disabled = true;
     btn.textContent = 'AI 분석 중...';
     resultBox.innerHTML = 'AI가 일기를 읽고 한국어로 교정 피드백을 작성하고 있습니다...';
+    lastRecordedSentence = ""; // 텍스트 피드백 시 녹음 문장 초기화
 
     const promptText = `사용자가 작성한 영어 일기/문장: "${text}"
 
@@ -233,6 +234,7 @@ HTML
 
   // 3. 발음 분석 (녹음 데이터 분석)
   let mediaRecorder, audioChunks = [];
+  let lastRecordedSentence = ""; // 오직 내가 녹음한 영어 문장만 따로 담아둘 변수
   
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
@@ -272,6 +274,7 @@ HTML
     if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
     const resultBox = document.getElementById('resultBox');
     resultBox.innerHTML = '🎧 AI가 음성을 듣고 발음, 억양, 강세를 분석하고 있습니다...';
+    lastRecordedSentence = ""; // 초기화
 
     const reader = new FileReader();
     reader.readAsDataURL(blob);
@@ -279,23 +282,13 @@ HTML
       const base64Audio = reader.result.split(',')[1];
       const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
-      const promptText = `첨부된 음성을 듣고 한국어로 다정하고 상세하게 발음 코칭을 작성해 주세요.
+      const promptText = `첨부된 사용자의 음성을 듣고 다음 규칙을 엄격히 지켜 응답해 주세요.
 
-구조:
-### 1. 🎙️ 들린 문장 (Transcript)
-- 사용자가 말한 영어 문장을 이곳에 적어주세요.
-
-### 2. 🗣️ 발음 및 연음 피드백
-- 잘한 발음 및 개선할 발음 단어 피드백
-
-### 3. 🎵 억양 및 강세 (Intonation)
-- 문장 강세 및 억양 피드백
-
-### 4. ⭐ 종합 코칭
-- 발음 종합 점수 (5점 만점) 및 한줄 코칭`;
+1. 첫 줄에 정확히 'TRANSCRIPT: [사용자가 말한 영어 문장만 영어로 적기]' 형식으로 작성할 것. (예: TRANSCRIPT: I went to the park today.)
+2. 그 아래부터는 한국어로 발음, 억양, 강세, 종합 코칭을 상세히 작성할 것.`;
 
       try {
-        const resultText = await callGeminiAPI({
+        const rawResponse = await callGeminiAPI({
           contents: [{
             parts: [
               { inline_data: { mime_type: mimeType, data: base64Audio } },
@@ -303,8 +296,16 @@ HTML
             ]
           }]
         });
-        
-        resultBox.innerHTML = formatMarkdown(resultText);
+
+        // 'TRANSCRIPT:' 뒤에 있는 영어 문장만 쏙 빼내서 변수에 저장
+        const match = rawResponse.match(/TRANSCRIPT:\s*(.*)/i);
+        if (match && match[1]) {
+          lastRecordedSentence = match[1].replace(/\[|\]/g, '').trim();
+        }
+
+        // 화면에 보여줄 때는 TRANSCRIPT 줄을 깔끔하게 지우고 마크다운 포맷 적용
+        const cleanResponse = rawResponse.replace(/TRANSCRIPT:.*(\r?\n|$)/i, '');
+        resultBox.innerHTML = formatMarkdown(cleanResponse);
 
       } catch (err) {
         resultBox.innerText = err.message;
@@ -316,26 +317,16 @@ HTML
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
-  // 스마트 음성 재생: 입력창에 글이 있으면 그것을 읽고, 없으면 피드백 결과 창에서 영어 문장들만 추출해서 읽어줌
+  // 원어민 음성 듣기 버튼 동작: 입력창에 글이 있으면 그것을 읽고, 없으면 오직 내가 녹음했던 영어 문장만 읽음
   function speakTargetText() {
     let textToSpeak = document.getElementById('journalInput').value.trim();
     
-    // 입력창이 비어있다면 AI 피드백 결과 박스(resultBox)의 텍스트 전체를 가져와서 영어 문장만 똑똑하게 골라냄
-    if (!textToSpeak) {
-      const rawText = document.getElementById('resultBox').innerText;
-      if (rawText && !rawText.includes('일기를 제출하거나') && !rawText.includes('AI가 분석 중')) {
-        // '1. 들린 문장' 항목 근처의 영어 텍스트를 추출하거나, 영어가 포함된 줄들을 찾아냄
-        const lines = rawText.split('\n');
-        const englishLines = lines.filter(line => /[a-zA-Z]{3,}/.test(line) && !line.includes('점수') && !line.includes('코칭') && !line.includes('피드백') && !line.includes('발음'));
-        if (englishLines.length > 0) {
-          textToSpeak = englishLines.join(' ');
-        } else {
-          textToSpeak = rawText;
-        }
-      }
+    // 입력창이 비어있고, 직전에 녹음한 영어 문장이 있다면 그것을 사용
+    if (!textToSpeak && lastRecordedSentence) {
+      textToSpeak = lastRecordedSentence;
     }
 
-    if (!textToSpeak || textToSpeak.includes('일기를 제출하거나')) {
+    if (!textToSpeak) {
       alert('읽을 텍스트가 없습니다. 일기를 입력하거나 음성 녹음을 먼저 진행해 주세요.');
       return;
     }
