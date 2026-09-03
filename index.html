@@ -126,9 +126,9 @@ HTML
     return formatted;
   }
 
-  // 통합 API 호출 함수 (v1 엔드포인트 및 gemini-1.5-flash 모델 적용)
+  // 최신 gemini-2.5-flash 모델 적용
   async function callGeminiAPI(payload) {
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -232,7 +232,7 @@ HTML
     }
   }
 
-  // 3. 발음 분석 (녹음 데이터 분석 - callGeminiAPI 공통 함수 공유)
+  // 3. 발음 분석 (녹음 데이터 분석)
   let mediaRecorder, audioChunks = [];
   
   async function toggleRecord() {
