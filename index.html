@@ -86,7 +86,7 @@ HTML
         <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 75px; height: 16px;">
         <span id="rateVal">1.0x</span>
       </div>
-      <button class="btn-secondary" onclick="speakInputText()">🔊 내가 쓴(말한) 문장 원어민 음성 듣기</button>
+      <button class="btn-secondary" onclick="speakTargetText()">🔊 원어민 음성 듣기</button>
     </div>
   </div>
 
@@ -233,6 +233,7 @@ HTML
 
   // 3. 발음 분석 (녹음 데이터 분석)
   let mediaRecorder, audioChunks = [];
+  let lastRecordedTranscript = ""; // 내가 녹음한 문장 보관용 변수
   
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
@@ -283,7 +284,7 @@ HTML
 
 구조:
 ### 1. 🎙️ 들린 문장 (Transcript)
-- AI가 들은 사용자 음성의 영어 문장
+- [사용자가 말한 영어 문장을 이곳에 정확히 한 줄로 적어주세요]
 
 ### 2. 🗣️ 발음 및 연음 피드백
 - 잘한 발음 및 개선할 발음 단어 피드백
@@ -303,7 +304,17 @@ HTML
             ]
           }]
         });
+        
         resultBox.innerHTML = formatMarkdown(resultText);
+
+        // AI가 인식한 '들린 문장' 파트를 자동으로 추출해서 변수에 저장
+        const match = resultText.match(/### 1\. 🎙️ 들린 문장.*?[-–]\s*(.*)/i) || resultText.match(/들린 문장.*?[-–]\s*(.*)/i);
+        if (match && match[1]) {
+          lastRecordedTranscript = match[1].replace(/\[|\]/g, '').trim();
+        } else {
+          lastRecordedTranscript = "";
+        }
+
       } catch (err) {
         resultBox.innerText = err.message;
       }
@@ -314,17 +325,23 @@ HTML
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
-  // 내가 입력란에 작성한 영어 문장을 원어민 음성으로 읽어주는 기능
-  function speakInputText() {
-    const text = document.getElementById('journalInput').value.trim();
-    if (!text) {
-      alert('듣고 싶은 영어 문장을 일기 입력란에 적거나 말해 주세요.');
+  // 스마트 음성 재생: 입력창 텍스트 우선, 없으면 직전에 녹음했던 문장을 읽어줌
+  function speakTargetText() {
+    let textToSpeak = document.getElementById('journalInput').value.trim();
+    
+    // 입력창이 비어있다면 직전에 녹음해서 AI가 인식한 문장을 사용
+    if (!textToSpeak && lastRecordedTranscript) {
+      textToSpeak = lastRecordedTranscript;
+    }
+
+    if (!textToSpeak) {
+      alert('읽을 텍스트가 없습니다. 일기를 입력하거나 음성 녹음을 먼저 진행해 주세요.');
       return;
     }
     
     window.speechSynthesis.cancel();
     
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = parseFloat(document.getElementById('speechRate').value);
     utterance.lang = 'en-US';
 
