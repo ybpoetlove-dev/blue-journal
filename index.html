@@ -127,7 +127,7 @@ HTML
     return formatted;
   }
 
-  // 1. 텍스트 일기 분석 (Gemini Flash 1.5)
+  // 1. 텍스트 일기 분석
   async function getAIFeedback() {
     if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
     const text = document.getElementById('journalInput').value.trim();
@@ -155,7 +155,7 @@ HTML
 ### 3. 알아두면 유용한 일상 표현 (한국어 설명)
 - 작성한 내용과 관련된 유용한 영어 표현 2~3개와 그에 대한 한국어 뜻 설명`;
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(url, {
@@ -249,7 +249,6 @@ HTML
         player.src = URL.createObjectURL(audioBlob);
         player.style.display = "block";
         
-        // 오디오 분석 진행
         await analyzeAudioPronunciation(audioBlob);
       };
 
@@ -266,12 +265,12 @@ HTML
     const resultBox = document.getElementById('resultBox');
     resultBox.innerHTML = '🎧 AI가 음성을 듣고 발음, 억양, 강세를 상세히 분석하고 있습니다...';
 
-    // Blob -> Base64 변환
     const reader = new FileReader();
     reader.readAsDataURL(blob);
     reader.onloadend = async () => {
       const base64Audio = reader.result.split(',')[1];
-      const mimeType = blob.type || 'audio/mp3';
+      // 모바일 오디오 포맷 호환성을 위해 audio/mp3 또는 audio/webm 대응
+      const mimeType = blob.type.split(';')[0] || 'audio/mp3';
 
       const promptText = `첨부된 음성은 사용자가 영어로 말한 녹음 파일입니다.
 음성을 들으시고, 사용자의 영어 발음을 다정하고 상세하게 코칭해 주세요. 한국어로 답변해 주세요.
@@ -291,7 +290,7 @@ HTML
 ### 4. ⭐ 종합 코칭 & 팁
 - 발음 종합 점수 (5점 만점) 및 응원 한마디`;
 
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
 
       try {
         const response = await fetch(url, {
