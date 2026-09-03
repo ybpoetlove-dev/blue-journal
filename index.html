@@ -1,3 +1,9 @@
+아까 답변 입력 도중에 메시지가 끊겼네요! 죄송합니다.
+
+오류 메시지에서 안내한 대로 모델명을 gemini-3.6-flash로 정확하게 지정하여 완성된 전체 index.html 코드를 다시 올려드립니다.
+
+이 코드로 GitHub의 index.html을 덮어씌워(Commit) 주시면 됩니다.
+
 HTML
 <!DOCTYPE html>
 <html lang="ko">
@@ -126,8 +132,8 @@ HTML
     return formatted;
   }
 
-  // 가장 안정적인 최신 별칭 모델 지정
-  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash:generateContent';
+  // 안내 메시지에서 권장한 최신 모델명으로 지정
+  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent';
 
   // 1. 텍스트 일기 분석
   async function getAIFeedback() {
