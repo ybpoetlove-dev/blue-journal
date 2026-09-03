@@ -128,7 +128,7 @@ HTML
 
   // Gemini API 호출 함수 (Flash 모델 단일화 및 Quota/에러 예외 처리)
   async function callGeminiAPI(payload) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
