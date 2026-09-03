@@ -12,41 +12,41 @@ HTML
 
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: #f8fafc; color: #1e293b; margin: 0; padding: 16px; font-size: 16px; }
-    .container { max-width: 600px; margin: 0 auto; }
-    h1 { color: #2563eb; font-size: 24px; text-align: center; margin-bottom: 18px; }
+    body { background-color: #f8fafc; color: #1e293b; margin: 0; padding: 12px; font-size: 19px; line-height: 1.6; }
+    .container { max-width: 100%; margin: 0 auto; }
+    h1 { color: #2563eb; font-size: 28px; text-align: center; margin-top: 10px; margin-bottom: 20px; font-weight: 800; }
     
-    .card { background: white; border-radius: 12px; padding: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 18px; }
-    .card-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #1e3a8a; }
+    .card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .card-title { font-size: 22px; font-weight: bold; margin-bottom: 14px; color: #1e3a8a; }
 
     .api-key-box { display: flex; gap: 8px; margin-bottom: 10px; }
-    .api-key-box input { flex: 1; min-width: 0; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
-    .api-key-box button { shrink: 0; white-space: nowrap; font-size: 15px; }
+    .api-key-box input { flex: 1; min-width: 0; padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 18px; }
+    .api-key-box button { shrink: 0; white-space: nowrap; font-size: 18px; padding: 14px 18px; }
 
-    textarea { width: 100%; height: 130px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; line-height: 1.5; resize: vertical; margin-bottom: 10px; }
-    .btn-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+    textarea { width: 100%; height: 160px; padding: 16px; border: 1.5px solid #cbd5e1; border-radius: 10px; font-size: 20px; line-height: 1.6; resize: vertical; margin-bottom: 12px; }
+    .btn-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
     
-    button { padding: 12px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 15px; }
-    .btn-primary { background: #2563eb; color: white; width: 100%; padding: 14px; font-size: 17px; }
+    button { padding: 14px 18px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 18px; }
+    .btn-primary { background: #2563eb; color: white; width: 100%; padding: 16px; font-size: 21px; font-weight: 800; }
     .btn-secondary { background: #e2e8f0; color: #334155; }
     .btn-danger { background: #ef4444; color: white; }
     .btn-success { background: #22c55e; color: white; }
     button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    /* AI Feedback 결과창 글씨 크기 확장 */
-    .result-box { background: #f1f5f9; border-radius: 8px; padding: 16px; min-height: 120px; font-size: 16px; line-height: 1.7; color: #1e293b; }
-    .result-box h3 { margin-top: 18px; margin-bottom: 8px; color: #2563eb; font-size: 18px; border-bottom: 2px solid #cbd5e1; padding-bottom: 4px; }
-    .result-box p { margin: 8px 0; }
-    .result-box ul { padding-left: 22px; margin: 8px 0; }
-    .result-box li { margin-bottom: 6px; }
+    /* AI Feedback 시원하게 확대한 결과 영역 */
+    .result-box { background: #f1f5f9; border-radius: 10px; padding: 20px; min-height: 140px; font-size: 20px; line-height: 1.8; color: #0f172a; word-break: break-word; }
+    .result-box h3 { margin-top: 22px; margin-bottom: 10px; color: #2563eb; font-size: 23px; font-weight: 800; border-bottom: 3px solid #cbd5e1; padding-bottom: 6px; }
+    .result-box p { margin: 10px 0; }
+    .result-box ul { padding-left: 24px; margin: 10px 0; }
+    .result-box li { margin-bottom: 10px; }
 
-    .audio-controls { margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 15px; }
-    audio { width: 100%; margin-top: 8px; }
+    .audio-controls { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 18px; }
+    audio { width: 100%; margin-top: 10px; }
     
-    .phrase-input { display: flex; gap: 8px; margin-bottom: 10px; }
-    .phrase-input input { flex: 1; min-width: 0; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 15px; }
+    .phrase-input { display: flex; gap: 8px; margin-bottom: 12px; }
+    .phrase-input input { flex: 1; min-width: 0; padding: 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 18px; }
     .phrase-list { list-style: none; padding: 0; margin: 0; }
-    .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px; font-size: 15px; }
+    .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px; font-size: 18px; }
   </style>
 </head>
 <body>
@@ -63,7 +63,7 @@ HTML
   </div>
 
   <div class="card">
-    <div class="card-title">✍️ Today's Journal (쓰기 & 말하기)</div>
+    <div class="card-title">✍️ Today's Journal</div>
     <textarea id="journalInput" placeholder="오늘의 일기를 영문으로 적거나 말해보세요..."></textarea>
     
     <div class="btn-group">
@@ -72,7 +72,7 @@ HTML
     </div>
     <audio id="audioPlayer" controls style="display:none;"></audio>
 
-    <div style="margin-top: 10px;">
+    <div style="margin-top: 12px;">
       <button id="submitBtn" class="btn-primary" onclick="getAIFeedback()">Submit & Get Feedback</button>
     </div>
   </div>
@@ -84,7 +84,7 @@ HTML
     <div class="audio-controls">
       <div>
         <span>속도:</span>
-        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 80px;">
+        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 90px; height: 20px;">
         <span id="rateVal">1.0x</span>
       </div>
       <button class="btn-secondary" onclick="speakResult()">🔊 원어민 음성 듣기</button>
@@ -92,7 +92,7 @@ HTML
   </div>
 
   <div class="card">
-    <div class="card-title">📂 My Phrase Book (나만의 표현 상자)</div>
+    <div class="card-title">📂 My Phrase Book</div>
     <div class="phrase-input">
       <input type="text" id="manualPhrase" placeholder="저장할 표현 입력...">
       <button class="btn-secondary" onclick="addPhraseManual()">+ 추가</button>
@@ -282,7 +282,7 @@ HTML
     list.innerHTML = phrases.map((p, i) => `
       <li class="phrase-item">
         <span>${p}</span>
-        <button class="btn-secondary" style="padding: 6px 10px;" onclick="deletePhrase(${i})">삭제</button>
+        <button class="btn-secondary" style="padding: 8px 12px; font-size: 16px;" onclick="deletePhrase(${i})">삭제</button>
       </li>
     `).join('');
   }
