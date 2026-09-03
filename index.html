@@ -126,9 +126,9 @@ HTML
     return formatted;
   }
 
-  // 최신 gemini-2.5-flash 모델 사용 처리
+  // Gemini API 호출 함수 (Flash 모델 단일화 및 Quota/에러 예외 처리)
   async function callGeminiAPI(payload) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -139,19 +139,227 @@ HTML
       const data = await response.json();
 
       if (data.error) {
-        if (data이 에러는 앱/웹 서비스가 연동해 둔 **Gemini API의 모델 이름 지정이나 버전에 문제가 생겨 발생한 오류**입니다. 
+        if (data.error.message && (data.error.message.includes('quota') || data.error.message.includes('Quota'))) {
+          throw new Error('⏳ 무료 API 사용량(초당/분당 제한)을 초과했습니다. 약 15~30초 후에 다시 시도해 주세요.');
+        }
+        throw new Error(data.error.message || 'API 호출 오류가 발생했습니다.');
+      }
 
-사용자님의 녹음 파일 자체 문제라기보다는, **서비스 백엔드(개발 측) 설정 문제**일 가능성이 큽니다.
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        return data.candidates[0].content.parts[0].text;
+      }
+      throw new Error('응답을 받아오지 못했습니다.');
+    } catch (err) {
+      throw err;
+    }
+  }
 
-**오류 원인**
-* 서비스에서 호출하려는 모델 명칭(`models/gemini-1.5-pro`)이 사용 중인 API 버전(`v1beta`)에서 지원되지 않거나, 모델명이 잘못 지정되어 API 서버가 요청을 처리하지 못한 상황입니다.
+  // 1. 텍스트 일기 피드백
+  async function getAIFeedback() {
+    if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
+    const text = document.getElementById('journalInput').value.trim();
+    if (!text) return alert('일기 내용을 입력해 주세요.');
 
-**해결 방법**
+    const btn = document.getElementById('submitBtn');
+    const resultBox = document.getElementById('resultBox');
+    
+    btn.disabled = true;
+    btn.textContent = 'AI 분석 중...';
+    resultBox.innerHTML = 'AI가 일기를 읽고 한국어로 교정 피드백을 작성하고 있습니다...';
 
-* **직접 앱/웹을 개발 중이신 경우:**
-  * API 요청 시 모델명을 `gemini-1.5-pro` (앞의 `models/` 제거) 또는 현재 지원되는 최신 모델명(예: `gemini-1.5-pro-latest`, `gemini-2.0-flash` 등)으로 변경해 보세요.
-  * API SDK 버전을 최신으로 업데이트하거나, `ListModels` API를 호출해 현재 Key에서 사용 가능한 정확한 모델 ID를 확인하세요.
+    const promptText = `사용자가 작성한 영어 일기/문장: "${text}"
 
-* **외부 학습 웹사이트/앱을 이용 중인 일반 사용자인 경우:**
-  * 개발자나 서비스 운영자가 API 모델 설정을 수정해야 해결되는 문제이므로, **페이지를 새로고침**하거나 잠시 후 다시 시도해 보세요.
-  * 계속 동일한 에러가 난다면 해당 서비스 문의처에 에러 화면을 제보하시는 것이 좋습니다.
+위 문장을 분석하여 반드시 한국어로 친절하게 피드백을 제공해 주세요.
+
+구조:
+### 1. 자연스러운 영어 교정 문장
+- 교정 버전 1
+- 교정 버전 2
+
+### 2. 문장 뉘앙스 및 감정 피드백 (한국어)
+- 작성한 문장의 어조, 문법적 포인트에 대한 설명
+
+### 3. 알아두면 유용한 일상 표현 (한국어)
+- 연관된 유용한 영어 표현 2~3개`;
+
+    try {
+      const resultText = await callGeminiAPI({
+        contents: [{ parts: [{ text: promptText }] }]
+      });
+      resultBox.innerHTML = formatMarkdown(resultText);
+    } catch (err) {
+      resultBox.innerText = err.message;
+    } finally {
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Submit & Get Text Feedback';
+      }, 1000);
+    }
+  }
+
+  // 2. 음성 입력 (STT)
+  let recognition, isRecognizing = false;
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      document.getElementById('journalInput').value += ' ' + transcript;
+    };
+  }
+
+  function toggleSTT() {
+    if (!recognition) return alert('현재 브라우저는 음성 인식을 지원하지 않습니다. Chrome 앱에서 접속해 주세요.');
+    const btn = document.getElementById('sttBtn');
+    if (isRecognizing) {
+      recognition.stop();
+      btn.textContent = '🎙️ 음성으로 입력 시작 (STT)';
+      isRecognizing = false;
+    } else {
+      try {
+        recognition.start();
+        btn.textContent = '⏹️ 음성 인식 중지';
+        isRecognizing = true;
+      } catch (e) {
+        alert('마이크 권한을 확인해 주세요.');
+      }
+    }
+  }
+
+  // 3. 발음 분석 (녹음 데이터 분석)
+  let mediaRecorder, audioChunks = [];
+  
+  async function toggleRecord() {
+    const btn = document.getElementById('recBtn');
+    const player = document.getElementById('audioPlayer');
+
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      btn.textContent = "🔴 내 발음 녹음 & AI 발음 피드백";
+      btn.className = "btn-danger";
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+        player.src = URL.createObjectURL(audioBlob);
+        player.style.display = "block";
+        
+        await analyzeAudioPronunciation(audioBlob);
+      };
+
+      mediaRecorder.start();
+      btn.textContent = "⏹️ 녹음 중지 및 발음 분석 요청";
+      btn.className = "btn-success";
+    } catch (err) {
+      alert("마이크 권한을 허용해 주세요.");
+    }
+  }
+
+  async function analyzeAudioPronunciation(blob) {
+    if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
+    const resultBox = document.getElementById('resultBox');
+    resultBox.innerHTML = '🎧 AI가 음성을 듣고 발음, 억양, 강세를 분석하고 있습니다...';
+
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = async () => {
+      const base64Audio = reader.result.split(',')[1];
+      const mimeType = blob.type.split(';')[0] || 'audio/webm';
+
+      const promptText = `첨부된 음성을 듣고 한국어로 다정하고 상세하게 발음 코칭을 작성해 주세요.
+
+구조:
+### 1. 🎙️ 들린 문장 (Transcript)
+- AI가 들은 사용자 음성의 영어 문장
+
+### 2. 🗣️ 발음 및 연음 피드백
+- 잘한 발음 및 개선할 발음 단어 피드백
+
+### 3. 🎵 억양 및 강세 (Intonation)
+- 문장 강세 및 억양 피드백
+
+### 4. ⭐ 종합 코칭
+- 발음 종합 점수 (5점 만점) 및 한줄 코칭`;
+
+      try {
+        const resultText = await callGeminiAPI({
+          contents: [{
+            parts: [
+              { inline_data: { mime_type: mimeType, data: base64Audio } },
+              { text: promptText }
+            ]
+          }]
+        });
+        resultBox.innerHTML = formatMarkdown(resultText);
+      } catch (err) {
+        resultBox.innerText = err.message;
+      }
+    };
+  }
+
+  document.getElementById('speechRate').addEventListener('input', (e) => {
+    document.getElementById('rateVal').textContent = e.target.value + 'x';
+  });
+
+  function speakResult() {
+    const text = document.getElementById('resultBox').innerText;
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = parseFloat(document.getElementById('speechRate').value);
+    utterance.lang = 'en-US';
+
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.includes('en'));
+    if (enVoice) utterance.voice = enVoice;
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // 단어장 기능
+  let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
+  function renderPhrases() {
+    const list = document.getElementById('phraseList');
+    list.innerHTML = phrases.map((p, i) => `
+      <li class="phrase-item">
+        <span>${p}</span>
+        <button class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deletePhrase(${i})">삭제</button>
+      </li>
+    `).join('');
+  }
+
+  function addPhraseManual() {
+    const input = document.getElementById('manualPhrase');
+    if (input.value.trim()) {
+      phrases.push(input.value.trim());
+      localStorage.setItem('my_phrases', JSON.stringify(phrases));
+      input.value = '';
+      renderPhrases();
+    }
+  }
+
+  function deletePhrase(i) {
+    phrases.splice(i, 1);
+    localStorage.setItem('my_phrases', JSON.stringify(phrases));
+    renderPhrases();
+  }
+  renderPhrases();
+</script>
+
+</body>
+</html>
