@@ -5,419 +5,269 @@ HTML
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Blue English Journal</title>
+  
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/180/2563eb/ffffff?text=Blue">
+  <meta name="theme-color" content="#2563eb">
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: sans-serif; background: #f5f7fa; color: #333; padding: 20px; }
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f8fafc; color: #1e293b; margin: 0; padding: 20px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { color: #2563eb; font-size: 24px; text-align: center; margin-bottom: 20px; }
     
-    .container {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 20px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
+    .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .card-title { font-size: 18px; font-weight: bold; margin-bottom: 12px; color: #1e3a8a; }
 
-    @media (min-width: 768px) {
-      .container { grid-template-columns: 1fr 1fr; }
-    }
+    .api-key-box { display: flex; gap: 8px; margin-bottom: 15px; }
+    .api-key-box input { flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+    
+    textarea { width: 100%; height: 120px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; resize: vertical; margin-bottom: 10px; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    
+    button { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
+    .btn-primary { background: #2563eb; color: white; width: 100%; padding: 12px; font-size: 16px; }
+    .btn-secondary { background: #e2e8f0; color: #334155; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-success { background: #22c55e; color: white; }
+    button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    .card {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    .full-width {
-      grid-column: 1 / -1;
-    }
-
-    h2 { font-size: 20px; margin-bottom: 12px; color: #1e293b; }
-
-    textarea {
-      width: 100%;
-      height: 180px;
-      padding: 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      resize: vertical;
-      font-size: 15px;
-      line-height: 1.5;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      margin-top: 12px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-      font-size: 15px;
-    }
-
-    button:hover { background: #1d4ed8; }
-
-    .result-box {
-      margin-top: 10px;
-      padding: 20px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      line-height: 1.7;
-      font-size: 15px;
-      min-height: 180px;
-    }
-
-    .section-title {
-      font-weight: bold;
-      color: #2563eb;
-      margin-top: 16px;
-      margin-bottom: 6px;
-      font-size: 16px;
-    }
-    .section-title:first-child { margin-top: 0; }
-
-    .section-content {
-      color: #334155;
-      margin-bottom: 12px;
-      white-space: pre-wrap;
-    }
-
-    .audio-panel {
-      margin-top: 16px;
-      padding: 12px;
-      background: #eef2ff;
-      border-radius: 8px;
-    }
-
-    .speed-control {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 14px;
-      color: #475569;
-      margin-bottom: 10px;
-    }
-
-    .speed-control input {
-      width: 60%;
-      cursor: pointer;
-    }
-
-    .audio-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    .audio-btn {
-      flex: 1;
-      background: #059669;
-      margin-top: 0;
-      padding: 10px;
-      font-size: 14px;
-    }
-    .audio-btn:hover { background: #047857; }
-
-    .save-phrase-btn {
-      background: #4f46e5;
-      margin-top: 8px;
-      padding: 8px;
-      font-size: 13px;
-    }
-
-    /* 단어장 직접 입력 영역 */
-    .wordbook-input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-
-    .wordbook-input-group input {
-      flex: 1;
-      padding: 10px 12px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .wordbook-input-group button {
-      width: auto;
-      margin-top: 0;
-      padding: 10px 18px;
-      background: #0284c7;
-      white-space: nowrap;
-    }
-
-    .wordbook-input-group button:hover {
-      background: #0369a1;
-    }
-
-    .phrase-list {
-      list-style: none;
-      margin-top: 10px;
-    }
-
-    .phrase-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-
-    .phrase-text {
-      font-size: 15px;
-      color: #1e293b;
-      flex: 1;
-      margin-right: 10px;
-    }
-
-    .phrase-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .small-btn {
-      padding: 6px 10px;
-      font-size: 12px;
-      margin-top: 0;
-      width: auto;
-    }
-
-    .del-btn { background: #ef4444; }
-    .del-btn:hover { background: #dc2626; }
+    .result-box { background: #f1f5f9; border-radius: 8px; padding: 15px; min-height: 120px; white-space: pre-wrap; font-size: 15px; line-height: 1.6; }
+    .audio-controls { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+    audio { width: 100%; margin-top: 8px; }
+    
+    .phrase-input { display: flex; gap: 8px; margin-bottom: 12px; }
+    .phrase-input input { flex: 1; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 6px; }
+    .phrase-list { list-style: none; padding: 0; margin: 0; }
+    .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 6px; }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    <!-- 왼쪽: 일기 작성 -->
-    <div class="card">
-      <h2>Today's Journal</h2>
-      <textarea id="journalInput" placeholder="Write your diary in English..."></textarea>
-      <button onclick="processDiary()">Submit & Get Feedback</button>
-    </div>
+<div class="container">
+  <h1>📘 Blue English Journal</h1>
 
-    <!-- 오른쪽: AI 피드백 -->
-    <div class="card">
-      <h2>AI Feedback</h2>
-      <div id="feedbackResult" class="result-box">
-        교정 문장 2개와 감각적인 단상이 이곳에 표시됩니다.
-      </div>
-
-      <!-- 오디오 컨트롤 패널 -->
-      <div id="audioPanel" class="audio-panel" style="display: none;">
-        <div class="speed-control">
-          <span>듣기 속도: <strong id="speedValue">0.9x</strong></span>
-          <input type="range" id="speedSlider" min="0.5" max="1.5" step="0.1" value="0.9" oninput="updateSpeedLabel(this.value)">
-        </div>
-        <div class="audio-group">
-          <button class="audio-btn" onclick="speakText(sentence1)">🔊 문장 1 듣기</button>
-          <button class="audio-btn" onclick="speakText(sentence2)">🔊 문장 2 듣기</button>
-        </div>
-        <button class="save-phrase-btn" onclick="saveCurrentSentences()">⭐ 교정 문장 단어장에 저장하기</button>
-      </div>
-    </div>
-
-    <!-- 하단: 나만의 표현 단어장 -->
-    <div class="card full-width">
-      <h2>My Phrase Book (나만의 표현 상자)</h2>
-      
-      <!-- 직접 입력 영역 -->
-      <div class="wordbook-input-group">
-        <input type="text" id="customPhraseInput" placeholder="저장하고 싶은 영문 표현을 직접 입력하세요..." onkeypress="handleCustomKeyPress(event)">
-        <button onclick="addCustomPhrase()">+ 추가하기</button>
-      </div>
-
-      <ul id="phraseList" class="phrase-list">
-        <li style="color: #94a3b8; font-size: 14px;">저장된 표현이 없습니다. 표현을 직접 추가하거나 교정 문장을 저장해 보세요!</li>
-      </ul>
+  <div class="card">
+    <div class="card-title">🔑 Gemini API Key</div>
+    <div class="api-key-box">
+      <input type="password" id="apiKeyInput" placeholder="API Key를 입력하면 저장됩니다">
+      <button class="btn-secondary" onclick="saveApiKey()">저장</button>
     </div>
   </div>
 
-  <script>
-    let sentence1 = '';
-    let sentence2 = '';
-    let savedPhrases = JSON.parse(localStorage.getItem('myPhrases') || '[]');
+  <div class="card">
+    <div class="card-title">✍️ Today's Journal (쓰기 & 말하기)</div>
+    <textarea id="journalInput" placeholder="오늘의 일기를 영문으로 적거나 말해보세요..."></textarea>
+    
+    <div class="btn-group">
+      <button id="sttBtn" class="btn-secondary" onclick="toggleSTT()">🎙️ 음성으로 입력 시작</button>
+      <button id="recBtn" class="btn-danger" onclick="toggleRecord()">🔴 내 발음 녹음하기</button>
+    </div>
+    <audio id="audioPlayer" controls style="display:none;"></audio>
 
-    renderPhrases();
+    <div style="margin-top: 15px;">
+      <button id="submitBtn" class="btn-primary" onclick="getAIFeedback()">Submit & Get Feedback</button>
+    </div>
+  </div>
 
-    function updateSpeedLabel(val) {
-      document.getElementById('speedValue').innerText = val + 'x';
+  <div class="card">
+    <div class="card-title">💡 AI Feedback</div>
+    <div id="resultBox" class="result-box">일기를 작성한 후 제출하면 교정 결과가 표시됩니다.</div>
+    
+    <div class="audio-controls">
+      <span>🔊 재생 속도:</span>
+      <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 100px;">
+      <span id="rateVal">1.0x</span>
+      <button class="btn-secondary" onclick="speakResult()">🔊 원어민 음성 듣기</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📂 My Phrase Book (나만의 표현 상자)</div>
+    <div class="phrase-input">
+      <input type="text" id="manualPhrase" placeholder="저장하고 싶은 표현 직접 입력...">
+      <button class="btn-secondary" onclick="addPhraseManual()">+ 추가</button>
+    </div>
+    <ul id="phraseList" class="phrase-list"></ul>
+  </div>
+</div>
+
+<script>
+  let apiKey = localStorage.getItem('gemini_api_key') || '';
+  if (apiKey) document.getElementById('apiKeyInput').value = apiKey;
+
+  function saveApiKey() {
+    const key = document.getElementById('apiKeyInput').value.trim();
+    if (key) {
+      localStorage.setItem('gemini_api_key', key);
+      apiKey = key;
+      alert('API Key가 저장되었습니다!');
     }
+  }
 
-    async function processDiary() {
-      const text = document.getElementById('journalInput').value;
-      const resultDiv = document.getElementById('feedbackResult');
-      const audioPanel = document.getElementById('audioPanel');
+  async function getAIFeedback() {
+    if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
+    const text = document.getElementById('journalInput').value.trim();
+    if (!text) return alert('일기 내용을 입력해 주세요.');
 
-      if (!text.trim()) {
-        alert('일기를 먼저 작성해 주세요!');
-        return;
-      }
+    const btn = document.getElementById('submitBtn');
+    const resultBox = document.getElementById('resultBox');
+    
+    btn.disabled = true;
+    btn.textContent = 'AI 분석 중...';
+    resultBox.innerText = 'AI가 일기를 읽고 교정을 진행하고 있습니다...';
 
-      resultDiv.innerHTML = '<p style="color: #64748b;">원어민 일상 표현과 감각적인 단상을 정리 중입니다...</p>';
-      audioPanel.style.display = 'none';
+    const promptText = `Analyze this journal entry: "${text}".
+Provide:
+1. Two natural corrected versions.
+2. Short emotional reflection or nuance explanation in Korean (3-4 lines).
+3. Useful expanded daily expressions.`;
 
-      // ★ 본인의 Gemini API 키를 넣어주세요
-      const apiKey = 'AQ.Ab8RN6IN97cbBSDKWTm0AXRV4Vtq5nKMgApSPT-KaWn9nb-fYg'; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
-      const prompt = `너는 영문 일기 튜터야. 아래 조건에 맞춰 피드백을 작성해줘. 인사말, 서론은 쓰지 마.
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }]
+        })
+      });
 
-[교정 문장]
-1. (일상에서 가장 자연스럽게 쓰는 추천 영문장 1개)
-2. (상황이나 뉘앙스를 살짝 바꾼 또 다른 자연스러운 영문장 1개)
+      const data = await response.json();
 
-[단상 및 포인트]
-(원문의 뉘앙스, 어감 차이, 일상에서 쓰일 때의 느낌과 교정 이유를 3~5줄 분량으로 작성)
-
-[함께 쓰면 좋은 일상 표현]
-(관련 상황에서 원어민들이 자주 쓰는 유용한 표현 2개와 간결한 설명)
-
-작성한 일기:
-${text}`;
-
-      try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.error) {
-          resultDiv.innerHTML = `<p style="color: #ef4444;">오류 발생: ${data.error.message}</p>`;
-          return;
+      if (data.error) {
+        if (data.error.code === 429 || data.error.message.includes('quota')) {
+          throw new Error('API 사용량 초과입니다. 약 15~20초 후 다시 시도해 주세요.');
         }
-
-        const rawText = data.candidates[0].content.parts[0].text;
-        
-        let formattedText = rawText
-          .replace(/\*\*/g, '')
-          .replace(/###/g, '')
-          .replace(/\[교정 문장\]/g, '<div class="section-title">[교정 문장]</div><div class="section-content">')
-          .replace(/\[단상 및 포인트\]/g, '</div><div class="section-title">[단상 및 포인트]</div><div class="section-content">')
-          .replace(/\[함께 쓰면 좋은 일상 표현\]/g, '</div><div class="section-title">[함께 쓰면 좋은 일상 표현]</div><div class="section-content">');
-        
-        formattedText += '</div>';
-        resultDiv.innerHTML = formattedText;
-
-        const lines = rawText.split('\n');
-        sentence1 = '';
-        sentence2 = '';
-
-        for (let line of lines) {
-          const cleanLine = line.replace(/[*#>`]/g, '').trim();
-          if (cleanLine.startsWith('1.') && !sentence1) {
-            sentence1 = cleanLine.replace(/^1\.\s*/, '').trim();
-          } else if (cleanLine.startsWith('2.') && !sentence2) {
-            sentence2 = cleanLine.replace(/^2\.\s*/, '').trim();
-          }
-        }
-
-        if (sentence1 || sentence2) {
-          audioPanel.style.display = 'block';
-        }
-
-      } catch (error) {
-        console.error(error);
-        resultDiv.innerHTML = '<p style="color: #ef4444;">요청 처리 중 오류가 발생했습니다. API 키와 네트워크 상태를 확인해 주세요.</p>';
-      }
-    }
-
-    function speakText(textToSpeak) {
-      if (!textToSpeak) return;
-      window.speechSynthesis.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      const speed = parseFloat(document.getElementById('speedSlider').value);
-      
-      utterance.lang = 'en-US';
-      utterance.rate = speed;
-      window.speechSynthesis.speak(utterance);
-    }
-
-    function saveCurrentSentences() {
-      let addedCount = 0;
-      if (sentence1 && !savedPhrases.includes(sentence1)) {
-        savedPhrases.push(sentence1);
-        addedCount++;
-      }
-      if (sentence2 && !savedPhrases.includes(sentence2)) {
-        savedPhrases.push(sentence2);
-        addedCount++;
+        throw new Error(data.error.message || 'API 호출 중 오류 발생');
       }
 
-      if (addedCount > 0) {
-        localStorage.setItem('myPhrases', JSON.stringify(savedPhrases));
-        renderPhrases();
-        alert('단어장에 표현이 저장되었습니다!');
+      if (data.candidates && data.candidates[0].content.parts[0].text) {
+        resultBox.innerText = data.candidates[0].content.parts[0].text;
       } else {
-        alert('이미 단어장에 저장된 표현입니다.');
+        resultBox.innerText = '응답을 불러올 수 없습니다. 다시 시도해 주세요.';
       }
+    } catch (err) {
+      resultBox.innerText = '오류 발생: ' + err.message;
+    } finally {
+      // 연속 클릭 방지: 제출 완료 후 5초 동안 버튼 비활성화 유지
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Submit & Get Feedback';
+      }, 5000);
+    }
+  }
+
+  // STT / 녹음 / 음성합성 기능
+  let recognition, isRecognizing = false;
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event) => {
+      let transcript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        transcript += event.results[i][0].transcript;
+      }
+      document.getElementById('journalInput').value += ' ' + transcript;
+    };
+  }
+
+  function toggleSTT() {
+    if (!recognition) return alert('이 브라우저는 음성 인식을 지원하지 않습니다.');
+    const btn = document.getElementById('sttBtn');
+    if (isRecognizing) {
+      recognition.stop();
+      btn.textContent = '🎙️ 음성으로 입력 시작';
+      isRecognizing = false;
+    } else {
+      recognition.start();
+      btn.textContent = '⏹️ 음성 인식 중지';
+      isRecognizing = true;
+    }
+  }
+
+  let mediaRecorder, audioChunks = [];
+  async function toggleRecord() {
+    const btn = document.getElementById('recBtn');
+    const player = document.getElementById('audioPlayer');
+
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+      mediaRecorder.stop();
+      btn.textContent = "🔴 내 발음 녹음하기";
+      btn.className = "btn-danger";
+      return;
     }
 
-    // 표현 직접 추가 함수
-    function addCustomPhrase() {
-      const inputEl = document.getElementById('customPhraseInput');
-      const val = inputEl.value.trim();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/mp3' });
+        player.src = URL.createObjectURL(audioBlob);
+        player.style.display = "block";
+      };
+      mediaRecorder.start();
+      btn.textContent = "⏹️ 녹음 중지 및 저장";
+      btn.className = "btn-success";
+    } catch (err) {
+      alert("마이크 사용 권한을 허용해 주세요.");
+    }
+  }
 
-      if (!val) {
-        alert('저장할 표현을 입력해 주세요.');
-        return;
-      }
+  document.getElementById('speechRate').addEventListener('input', (e) => {
+    document.getElementById('rateVal').textContent = e.target.value + 'x';
+  });
 
-      if (savedPhrases.includes(val)) {
-        alert('이미 단어장에 등록된 표현입니다.');
-        return;
-      }
+  function speakResult() {
+    const text = document.getElementById('resultBox').innerText;
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = parseFloat(document.getElementById('speechRate').value);
+    utterance.lang = 'en-US';
 
-      savedPhrases.push(val);
-      localStorage.setItem('myPhrases', JSON.stringify(savedPhrases));
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.includes('en'));
+    if (enVoice) utterance.voice = enVoice;
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // 단어장 관리
+  let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
+  function renderPhrases() {
+    const list = document.getElementById('phraseList');
+    list.innerHTML = phrases.map((p, i) => `
+      <li class="phrase-item">
+        <span>${p}</span>
+        <button class="btn-secondary" style="padding: 4px 8px;" onclick="deletePhrase(${i})">삭제</button>
+      </li>
+    `).join('');
+  }
+
+  function addPhraseManual() {
+    const input = document.getElementById('manualPhrase');
+    if (input.value.trim()) {
+      phrases.push(input.value.trim());
+      localStorage.setItem('my_phrases', JSON.stringify(phrases));
+      input.value = '';
       renderPhrases();
-      inputEl.value = '';
     }
+  }
 
-    // 엔터키 입력 지원
-    function handleCustomKeyPress(e) {
-      if (e.key === 'Enter') {
-        addCustomPhrase();
-      }
-    }
-
-    function deletePhrase(index) {
-      savedPhrases.splice(index, 1);
-      localStorage.setItem('myPhrases', JSON.stringify(savedPhrases));
-      renderPhrases();
-    }
-
-    function renderPhrases() {
-      const listEl = document.getElementById('phraseList');
-      if (savedPhrases.length === 0) {
-        listEl.innerHTML = '<li style="color: #94a3b8; font-size: 14px;">저장된 표현이 없습니다. 표현을 직접 추가하거나 교정 문장을 저장해 보세요!</li>';
-        return;
-      }
-
-      listEl.innerHTML = savedPhrases.map((phrase, idx) => `
-        <li class="phrase-item">
-          <span class="phrase-text">${phrase}</span>
-          <div class="phrase-actions">
-            <button class="small-btn audio-btn" onclick="speakText('${phrase.replace(/'/g, "\\'")}')">🔊 듣기</button>
-            <button class="small-btn del-btn" onclick="deletePhrase(${idx})">삭제</button>
-          </div>
-        </li>
-      `).join('');
-    }
-  </script>
+  function deletePhrase(i) {
+    phrases.splice(i, 1);
+    localStorage.setItem('my_phrases', JSON.stringify(phrases));
+    renderPhrases();
+  }
+  renderPhrases();
+</script>
 
 </body>
 </html>
