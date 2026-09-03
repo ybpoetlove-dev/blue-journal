@@ -93,7 +93,7 @@ HTML
   <div class="card">
     <div class="card-title">📂 My Phrase Book</div>
     <div class="phrase-input">
-      <input type="text" id="manualPhrase" placeholder="저장할 표현 입력...">
+      <input type="text" id="manualPhrase" placeholder="저장할 표현 입력…">
       <button class="btn-secondary" onclick="addPhraseManual()">+ 추가</button>
     </div>
     <ul id="phraseList" class="phrase-list"></ul>
@@ -233,7 +233,6 @@ HTML
 
   // 3. 발음 분석 (녹음 데이터 분석)
   let mediaRecorder, audioChunks = [];
-  let lastRecordedTranscript = ""; // 내가 녹음한 문장 보관용 변수
   
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
@@ -284,7 +283,7 @@ HTML
 
 구조:
 ### 1. 🎙️ 들린 문장 (Transcript)
-- [사용자가 말한 영어 문장을 이곳에 정확히 한 줄로 적어주세요]
+- 사용자가 말한 영어 문장을 이곳에 적어주세요.
 
 ### 2. 🗣️ 발음 및 연음 피드백
 - 잘한 발음 및 개선할 발음 단어 피드백
@@ -307,14 +306,6 @@ HTML
         
         resultBox.innerHTML = formatMarkdown(resultText);
 
-        // AI가 인식한 '들린 문장' 파트를 자동으로 추출해서 변수에 저장
-        const match = resultText.match(/### 1\. 🎙️ 들린 문장.*?[-–]\s*(.*)/i) || resultText.match(/들린 문장.*?[-–]\s*(.*)/i);
-        if (match && match[1]) {
-          lastRecordedTranscript = match[1].replace(/\[|\]/g, '').trim();
-        } else {
-          lastRecordedTranscript = "";
-        }
-
       } catch (err) {
         resultBox.innerText = err.message;
       }
@@ -325,16 +316,26 @@ HTML
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
-  // 스마트 음성 재생: 입력창 텍스트 우선, 없으면 직전에 녹음했던 문장을 읽어줌
+  // 스마트 음성 재생: 입력창에 글이 있으면 그것을 읽고, 없으면 피드백 결과 창에서 영어 문장들만 추출해서 읽어줌
   function speakTargetText() {
     let textToSpeak = document.getElementById('journalInput').value.trim();
     
-    // 입력창이 비어있다면 직전에 녹음해서 AI가 인식한 문장을 사용
-    if (!textToSpeak && lastRecordedTranscript) {
-      textToSpeak = lastRecordedTranscript;
+    // 입력창이 비어있다면 AI 피드백 결과 박스(resultBox)의 텍스트 전체를 가져와서 영어 문장만 똑똑하게 골라냄
+    if (!textToSpeak) {
+      const rawText = document.getElementById('resultBox').innerText;
+      if (rawText && !rawText.includes('일기를 제출하거나') && !rawText.includes('AI가 분석 중')) {
+        // '1. 들린 문장' 항목 근처의 영어 텍스트를 추출하거나, 영어가 포함된 줄들을 찾아냄
+        const lines = rawText.split('\n');
+        const englishLines = lines.filter(line => /[a-zA-Z]{3,}/.test(line) && !line.includes('점수') && !line.includes('코칭') && !line.includes('피드백') && !line.includes('발음'));
+        if (englishLines.length > 0) {
+          textToSpeak = englishLines.join(' ');
+        } else {
+          textToSpeak = rawText;
+        }
+      }
     }
 
-    if (!textToSpeak) {
+    if (!textToSpeak || textToSpeak.includes('일기를 제출하거나')) {
       alert('읽을 텍스트가 없습니다. 일기를 입력하거나 음성 녹음을 먼저 진행해 주세요.');
       return;
     }
