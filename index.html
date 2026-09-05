@@ -17,13 +17,13 @@ HTML
     h1 { color: #2563eb; font-size: 20px; text-align: center; margin-top: 6px; margin-bottom: 14px; font-weight: 800; }
     
     .card { background: white; border-radius: 10px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); margin-bottom: 12px; }
-    .card-title { font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #1e3a8a; }
+    .card-title { font-size: 15px; font-weight: bold; margin-bottom: 10px; color: #1e3a8a; display: flex; justify-content: space-between; align-items: center; }
 
     .api-key-box { display: flex; gap: 6px; margin-bottom: 6px; }
     .api-key-box input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
     .api-key-box button { flex-shrink: 0; white-space: nowrap; font-size: 14px; padding: 8px 12px; }
 
-    textarea { width: 100%; height: 110px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; line-height: 1.5; resize: vertical; margin-bottom: 8px; }
+    textarea { width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 15px; line-height: 1.5; resize: vertical; margin-bottom: 8px; }
     .btn-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
     
     button { padding: 9px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; }
@@ -33,19 +33,32 @@ HTML
     .btn-success { background: #22c55e; color: white; }
     button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
-    .result-box { background: #f1f5f9; border-radius: 8px; padding: 12px 14px; min-height: 100px; font-size: 14.5px; line-height: 1.55; color: #0f172a; word-break: break-word; }
+    .result-box { background: #f1f5f9; border-radius: 8px; padding: 12px 14px; min-height: 90px; font-size: 14.5px; line-height: 1.55; color: #0f172a; word-break: break-word; }
     .result-box h3 { margin-top: 12px; margin-bottom: 6px; color: #2563eb; font-size: 16px; font-weight: 800; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; }
     .result-box p { margin: 6px 0; }
     .result-box ul { padding-left: 18px; margin: 6px 0; }
-    .result-box li { margin-bottom: 4px; }
 
     .audio-controls { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-size: 13.5px; }
     audio { width: 100%; margin-top: 6px; }
-    
-    .phrase-input { display: flex; gap: 6px; margin-bottom: 8px; }
-    .phrase-input input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+
+    /* 대시보드 & 통계 스타일 */
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; margin-bottom: 10px; }
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 4px; }
+    .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
+    .stat-num { font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 2px; }
+
+    /* Before - After 카드 스타일 */
+    .ba-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13.5px; }
+    .ba-date { font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: bold; }
+    .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
+    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; }
+    .ba-note { font-size: 12px; color: #475569; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px; }
+
+    .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
+    .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
+
     .phrase-list { list-style: none; padding: 0; margin: 0; }
-    .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; font-size: 14px; }
+    .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; font-size: 13.5px; }
   </style>
 </head>
 <body>
@@ -53,6 +66,7 @@ HTML
 <div class="container">
   <h1>📘 Blue English Journal</h1>
 
+  <!-- API Key 설정 -->
   <div class="card">
     <div class="card-title">🔑 Gemini API Key</div>
     <div class="api-key-box">
@@ -61,39 +75,92 @@ HTML
     </div>
   </div>
 
+  <!-- 입력 카드 -->
   <div class="card">
-    <div class="card-title">✍️ Today's Journal</div>
-    <textarea id="journalInput" placeholder="오늘의 일기를 영문으로 적거나 말해보세요..."></textarea>
+    <div class="card-title">✍️ Today's Speaking & Journal</div>
+    <textarea id="journalInput" placeholder="오늘 말하고 싶은 문장을 음성(STT)으로 말하거나 적어보세요..."></textarea>
     
     <div class="btn-group">
       <button id="sttBtn" class="btn-secondary" onclick="toggleSTT()">🎙️ 음성으로 입력 시작 (STT)</button>
-      <button id="recBtn" class="btn-danger" onclick="toggleRecord()">🔴 내 발음 녹음 & AI 발음 피드백</button>
+      <button id="recBtn" class="btn-danger" onclick="toggleRecord()">🔴 내 발음 녹음 & AI 발음 분석</button>
     </div>
     <audio id="audioPlayer" controls style="display:none;"></audio>
 
     <div style="margin-top: 8px;">
-      <button id="submitBtn" class="btn-primary" onclick="getAIFeedback()">Submit & Get Text Feedback</button>
+      <button id="submitBtn" class="btn-primary" onclick="getAIFeedback()">Submit & Get Feedback</button>
     </div>
   </div>
 
+  <!-- AI 피드백 결과 카드 -->
   <div class="card">
     <div class="card-title">💡 AI Feedback</div>
-    <div id="resultBox" class="result-box">일기를 제출하거나 발음을 녹음하면 한국어 피드백이 여기에 표시됩니다.</div>
+    <div id="resultBox" class="result-box">음성 입력 후 피드백을 요청해보세요.</div>
     
     <div class="audio-controls">
       <div>
         <span>속도:</span>
-        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 75px; height: 16px;">
+        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 70px; height: 16px;">
         <span id="rateVal">1.0x</span>
       </div>
       <button class="btn-secondary" onclick="speakTargetText()">🔊 원어민 음성 듣기</button>
     </div>
   </div>
 
+  <!-- 📊 나의 영어 성장 리포트 (통계 & 월간 데이터) -->
+  <div class="card">
+    <div class="card-title">📈 My Speaking Growth</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">말한 문장 수</div>
+        <div id="statSentenceCount" class="stat-num">0개</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">발음 분석 횟수</div>
+        <div id="statAudioCount" class="stat-num">0회</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">저장된 표현</div>
+        <div id="statPhraseCount" class="stat-num">0개</div>
+      </div>
+    </div>
+
+    <!-- 월간 교정 패턴 기록 메모 -->
+    <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+      <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">🔍 이번 달 집중 교정 포인트</div>
+      <div class="input-row">
+        <input type="text" id="habitInput" placeholder="예: 시제 틀림, R/L 발음 구분 연습 중...">
+        <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="saveHabitNote()">저장</button>
+      </div>
+      <div id="habitDisplay" style="font-size: 12.5px; color: #2563eb; background: #eff6ff; padding: 6px 8px; border-radius: 6px; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- 🔄 Before & After 실력 변화 기록장 -->
+  <div class="card">
+    <div class="card-title">
+      <span>🔄 Before & After (변화 비교)</span>
+    </div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">처음 말했던 문장과 다시 다듬은 문장을 기록해 성장 변화를 비교해 보세요.</div>
+    
+    <div class="input-row">
+      <input type="text" id="baBefore" placeholder="Before (처음 말한 문장)">
+    </div>
+    <div class="input-row">
+      <input type="text" id="baAfter" placeholder="After (교정/개선된 문장)">
+    </div>
+    <div class="input-row">
+      <input type="text" id="baNote" placeholder="발음/문법 변화 메모 (선택)">
+      <button class="btn-secondary" style="font-size: 12px;" onclick="addBACard()">기록</button>
+    </div>
+
+    <div id="baContainer" style="margin-top: 10px;"></div>
+  </div>
+
+  <!-- 나만의 표현집 -->
   <div class="card">
     <div class="card-title">📂 My Phrase Book</div>
-    <div class="phrase-input">
-      <input type="text" id="manualPhrase" placeholder="저장할 표현 입력…">
+    <div class="input-row">
+      <input type="text" id="manualPhrase" placeholder="기억하고 싶은 표현 입력…">
       <button class="btn-secondary" onclick="addPhraseManual()">+ 추가</button>
     </div>
     <ul id="phraseList" class="phrase-list"></ul>
@@ -134,88 +201,138 @@ HTML
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-
       const data = await response.json();
-
-      if (data.error) {
-        if (data.error.message && (data.error.message.includes('quota') || data.error.message.includes('Quota'))) {
-          throw new Error('⏳ 무료 API 사용량(초당/분당 제한)을 초과했습니다. 약 15~30초 후에 다시 시도해 주세요.');
-        }
-        throw new Error(data.error.message || 'API 호출 오류가 발생했습니다.');
-      }
-
+      if (data.error) throw new Error(data.error.message || 'API 오류가 발생했습니다.');
       if (data.candidates && data.candidates[0].content.parts[0].text) {
         return data.candidates[0].content.parts[0].text;
       }
-      throw new Error('응답을 받아오지 못했습니다.');
-    } catch (err) {
-      throw err;
-    }
+      throw new Error('응답을 받지 못했습니다.');
+    } catch (err) { throw err; }
   }
 
-  // 문장 첫 글자 및 마침표 뒤 첫 글자 대문자 강제 변환 함수
+  // 문장 첫 글자 & 문장 부호(., ?, !) 뒤 대문자 정교화 함수
   function capitalizeSentences(text) {
     if (!text) return '';
-    // 전체 텍스트의 첫 글자 대문자화 + 마침표/느낌표/물음표 뒤의 소문자도 대문자로 변환
     let cleaned = text.trim();
-    if (cleaned.length > 0) {
-      cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-    }
+    if (cleaned.length > 0) cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     return cleaned.replace(/([.?!]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
   }
 
-  // 1. 텍스트 일기 피드백
+  // --- 데이터 관리 & 통계 ---
+  let sentenceCount = parseInt(localStorage.getItem('stat_sentence_count') || '0');
+  let audioCount = parseInt(localStorage.getItem('stat_audio_count') || '0');
+  let baList = JSON.parse(localStorage.getItem('ba_records') || '[]');
+  let habitNote = localStorage.getItem('habit_note') || '';
+
+  function updateDashboard() {
+    document.getElementById('statSentenceCount').textContent = sentenceCount + '개';
+    document.getElementById('statAudioCount').textContent = audioCount + '회';
+    document.getElementById('statPhraseCount').textContent = phrases.length + '개';
+    
+    if (habitNote) {
+      const display = document.getElementById('habitDisplay');
+      display.style.display = 'block';
+      display.textContent = '🎯 ' + habitNote;
+    }
+    renderBACards();
+  }
+
+  function saveHabitNote() {
+    const input = document.getElementById('habitInput').value.trim();
+    if (input) {
+      habitNote = input;
+      localStorage.setItem('habit_note', habitNote);
+      document.getElementById('habitInput').value = '';
+      updateDashboard();
+    }
+  }
+
+  // --- Before & After 카드 관리 ---
+  function addBACard() {
+    const before = document.getElementById('baBefore').value.trim();
+    const after = document.getElementById('baAfter').value.trim();
+    const note = document.getElementById('baNote').value.trim();
+
+    if (!before || !after) return alert('Before와 After 문장을 모두 입력해 주세요.');
+
+    const now = new Date();
+    const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
+
+    baList.unshift({ date: dateStr, before, after, note });
+    localStorage.setItem('ba_records', JSON.stringify(baList));
+
+    document.getElementById('baBefore').value = '';
+    document.getElementById('baAfter').value = '';
+    document.getElementById('baNote').value = '';
+    renderBACards();
+  }
+
+  function deleteBACard(index) {
+    baList.splice(index, 1);
+    localStorage.setItem('ba_records', JSON.stringify(baList));
+    renderBACards();
+  }
+
+  function renderBACards() {
+    const container = document.getElementById('baContainer');
+    if (baList.length === 0) {
+      container.innerHTML = '<div style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 10px;">아직 저장된 Before-After 데이터가 없습니다.</div>';
+      return;
+    }
+    container.innerHTML = baList.map((item, idx) => `
+      <div class="ba-card">
+        <div style="display: flex; justify-content: space-between;">
+          <span class="ba-date">📅 ${item.date}</span>
+          <span style="cursor: pointer; font-size: 11px; color: #94a3b8;" onclick="deleteBACard(${idx})">삭제</span>
+        </div>
+        <div class="ba-before">🔴 Before: ${item.before}</div>
+        <div class="ba-after">🟢 After: ${item.after}</div>
+        ${item.note ? `<div class="ba-note">💡 ${item.note}</div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // --- 1. AI 피드백 처리 ---
   async function getAIFeedback() {
-    if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
+    if (!apiKey) return alert('Gemini API Key를 입력 후 저장해 주세요.');
     const text = document.getElementById('journalInput').value.trim();
-    if (!text) return alert('일기 내용을 입력해 주세요.');
+    if (!text) return alert('문장을 입력하거나 음성으로 말해 주세요.');
 
     const btn = document.getElementById('submitBtn');
     const resultBox = document.getElementById('resultBox');
     
     btn.disabled = true;
     btn.textContent = 'AI 분석 중...';
-    resultBox.innerHTML = 'AI가 일기를 읽고 한국어로 교정 피드백을 작성하고 있습니다...';
-    lastRecordedSentence = "";
+    resultBox.innerHTML = 'AI가 피드백을 작성하고 있습니다...';
 
-    const promptText = `사용자가 작성한 영어 일기/문장: "${text}"
+    const promptText = `사용자가 작성한 영문장: "${text}"
 
-위 문장을 분석하여 반드시 한국어로 친절하게 피드백을 제공해 주세요.
-
-구조:
-### 1. 자연스러운 영어 교정 문장
-- 교정 버전 1
-- 교정 버전 2
-
-### 2. 문장 뉘앙스 및 감정 피드백 (한국어)
-- 작성한 문장의 어조, 문법적 포인트에 대한 설명
-
-### 3. 알아두면 유용한 일상 표현 (한국어)
-- 연관된 유용한 영어 표현 2~3개`;
+위 문장을 분석하여 한국어로 피드백을 제공해 주세요.
+1. 자연스러운 영어 교정 문장 (Before-After에 활용하기 좋게 명확히 제공)
+2. 뉘앙스 및 발음/문법 포인트
+3. 유용한 표현 레퍼런스`;
 
     try {
-      const resultText = await callGeminiAPI({
-        contents: [{ parts: [{ text: promptText }] }]
-      });
+      const resultText = await callGeminiAPI({ contents: [{ parts: [{ text: promptText }] }] });
       resultBox.innerHTML = formatMarkdown(resultText);
     } catch (err) {
       resultBox.innerText = err.message;
     } finally {
       setTimeout(() => {
         btn.disabled = false;
-        btn.textContent = 'Submit & Get Text Feedback';
+        btn.textContent = 'Submit & Get Feedback';
       }, 1000);
     }
   }
 
-  // 2. 음성 입력 (STT) - 강력한 대문자 후처리 적용
+  // --- 2. 음성 인식 (STT) 및 문장 수 카운트 ---
   let recognition, isRecognizing = false;
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.lang = 'en-US';
-    recognition.interimResults = false; // 확실히 확정된 결과만 받아서 처리
+    recognition.interimResults = false;
 
     recognition.onresult = (event) => {
       let transcript = '';
@@ -226,20 +343,24 @@ HTML
       transcript = transcript.trim();
       if (!transcript) return;
 
+      // 말한 문장 카운트 증가
+      sentenceCount++;
+      localStorage.setItem('stat_sentence_count', sentenceCount);
+      updateDashboard();
+
       const textarea = document.getElementById('journalInput');
       let currentText = textarea.value.trim();
 
       if (currentText === '') {
         textarea.value = capitalizeSentences(transcript);
       } else {
-        // 기존 텍스트와 이어붙일 때 공백을 두고 전체 문장 대문자 규칙 재적용
         textarea.value = capitalizeSentences(currentText + ' ' + transcript);
       }
     };
   }
 
   function toggleSTT() {
-    if (!recognition) return alert('현재 브라우저는 음성 인식을 지원하지 않습니다. Chrome 앱에서 접속해 주세요.');
+    if (!recognition) return alert('브라우저가 음성 인식을 지원하지 않습니다.');
     const btn = document.getElementById('sttBtn');
     if (isRecognizing) {
       recognition.stop();
@@ -250,23 +371,21 @@ HTML
         recognition.start();
         btn.textContent = '⏹️ 음성 인식 중지';
         isRecognizing = true;
-      } catch (e) {
-        alert('마이크 권한을 확인해 주세요.');
-      }
+      } catch (e) { alert('마이크 권한을 확인해 주세요.'); }
     }
   }
 
-  // 3. 발음 분석 (녹음 데이터 분석)
+  // --- 3. 발음 녹음 및 분석 ---
   let mediaRecorder, audioChunks = [];
-  let lastRecordedSentence = ""; 
-  
+  let lastRecordedSentence = "";
+
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
     const player = document.getElementById('audioPlayer');
 
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
-      btn.textContent = "🔴 내 발음 녹음 & AI 발음 피드백";
+      btn.textContent = "🔴 내 발음 녹음 & AI 발음 분석";
       btn.className = "btn-danger";
       return;
     }
@@ -275,7 +394,6 @@ HTML
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorder = new MediaRecorder(stream);
       audioChunks = [];
-      
       mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
       
       mediaRecorder.onstop = async () => {
@@ -283,22 +401,24 @@ HTML
         player.src = URL.createObjectURL(audioBlob);
         player.style.display = "block";
         
+        // 발음 분석 횟수 카운트 증가
+        audioCount++;
+        localStorage.setItem('stat_audio_count', audioCount);
+        updateDashboard();
+
         await analyzeAudioPronunciation(audioBlob);
       };
 
       mediaRecorder.start();
-      btn.textContent = "⏹️ 녹음 중지 및 발음 분석 요청";
+      btn.textContent = "⏹️ 녹음 중지 및 발음 분석";
       btn.className = "btn-success";
-    } catch (err) {
-      alert("마이크 권한을 허용해 주세요.");
-    }
+    } catch (err) { alert("마이크 권한을 허용해 주세요."); }
   }
 
   async function analyzeAudioPronunciation(blob) {
-    if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
+    if (!apiKey) return alert('Gemini API Key를 입력 후 저장해 주세요.');
     const resultBox = document.getElementById('resultBox');
-    resultBox.innerHTML = '🎧 AI가 음성을 듣고 발음, 억양, 강세를 분석하고 있습니다...';
-    lastRecordedSentence = "";
+    resultBox.innerHTML = '🎧 AI가 발음을 분석하고 있습니다...';
 
     const reader = new FileReader();
     reader.readAsDataURL(blob);
@@ -306,62 +426,39 @@ HTML
       const base64Audio = reader.result.split(',')[1];
       const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
-      const promptText = `첨부된 사용자의 음성을 듣고 다음 규칙을 엄격히 지켜 응답해 주세요.
-
-1. 첫 줄에 정확히 'TRANSCRIPT: [사용자가 말한 영어 문장만 첫 글자 대문자로 영어로 적기]' 형식으로 작성할 것. (예: TRANSCRIPT: I went to the park today.)
-2. 그 아래부터는 한국어로 발음, 억양, 강세, 종합 코칭을 상세히 작성할 것.`;
+      const promptText = `첨부된 음성을 듣고 한국어로 상세히 피드백해 주세요.
+1. 첫 줄: 'TRANSCRIPT: [사용자가 말한 정확한 영문장]'
+2. 발음 정확도, 강세, 억양 및 개선된 발음 포인트 작성`;
 
       try {
         const rawResponse = await callGeminiAPI({
-          contents: [{
-            parts: [
-              { inline_data: { mime_type: mimeType, data: base64Audio } },
-              { text: promptText }
-            ]
-          }]
+          contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64Audio } }, { text: promptText }] }]
         });
 
         const match = rawResponse.match(/TRANSCRIPT:\s*(.*)/i);
         if (match && match[1]) {
-          let sentence = match[1].replace(/\[|\]/g, '').trim();
-          lastRecordedSentence = capitalizeSentences(sentence);
+          lastRecordedSentence = capitalizeSentences(match[1].replace(/\[|\]/g, '').trim());
         }
 
         const cleanResponse = rawResponse.replace(/TRANSCRIPT:.*(\r?\n|$)/i, '');
         resultBox.innerHTML = formatMarkdown(cleanResponse);
-
-      } catch (err) {
-        resultBox.innerText = err.message;
-      }
+      } catch (err) { resultBox.innerText = err.message; }
     };
   }
 
+  // --- TTS 및 단어장 ---
   document.getElementById('speechRate').addEventListener('input', (e) => {
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
   function speakTargetText() {
-    let textToSpeak = document.getElementById('journalInput').value.trim();
-    
-    if (!textToSpeak && lastRecordedSentence) {
-      textToSpeak = lastRecordedSentence;
-    }
-
-    if (!textToSpeak) {
-      alert('읽을 텍스트가 없습니다. 일기를 입력하거나 음성 녹음을 먼저 진행해 주세요.');
-      return;
-    }
+    let textToSpeak = document.getElementById('journalInput').value.trim() || lastRecordedSentence;
+    if (!textToSpeak) return alert('읽을 텍스트가 없습니다.');
     
     window.speechSynthesis.cancel();
-    
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = parseFloat(document.getElementById('speechRate').value);
     utterance.lang = 'en-US';
-
-    const voices = window.speechSynthesis.getVoices();
-    const enVoice = voices.find(v => v.lang.includes('en'));
-    if (enVoice) utterance.voice = enVoice;
-
     window.speechSynthesis.speak(utterance);
   }
 
@@ -371,9 +468,10 @@ HTML
     list.innerHTML = phrases.map((p, i) => `
       <li class="phrase-item">
         <span>${p}</span>
-        <button class="btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="deletePhrase(${i})">삭제</button>
+        <button class="btn-secondary" style="padding: 3px 6px; font-size: 11px;" onclick="deletePhrase(${i})">삭제</button>
       </li>
     `).join('');
+    updateDashboard();
   }
 
   function addPhraseManual() {
@@ -391,7 +489,10 @@ HTML
     localStorage.setItem('my_phrases', JSON.stringify(phrases));
     renderPhrases();
   }
+
+  // 초기화
   renderPhrases();
+  updateDashboard();
 </script>
 
 </body>
