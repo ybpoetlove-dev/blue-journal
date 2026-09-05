@@ -153,6 +153,17 @@ HTML
     }
   }
 
+  // 문장 첫 글자 및 마침표 뒤 첫 글자 대문자 강제 변환 함수
+  function capitalizeSentences(text) {
+    if (!text) return '';
+    // 전체 텍스트의 첫 글자 대문자화 + 마침표/느낌표/물음표 뒤의 소문자도 대문자로 변환
+    let cleaned = text.trim();
+    if (cleaned.length > 0) {
+      cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    }
+    return cleaned.replace(/([.?!]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
+  }
+
   // 1. 텍스트 일기 피드백
   async function getAIFeedback() {
     if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
@@ -197,13 +208,14 @@ HTML
     }
   }
 
-  // 2. 음성 입력 (STT) - 첫 글자 자동 대문자 변환 기능 추가
+  // 2. 음성 입력 (STT) - 강력한 대문자 후처리 적용
   let recognition, isRecognizing = false;
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.lang = 'en-US';
+    recognition.interimResults = false; // 확실히 확정된 결과만 받아서 처리
 
     recognition.onresult = (event) => {
       let transcript = '';
@@ -212,16 +224,16 @@ HTML
       }
       
       transcript = transcript.trim();
-      if (transcript) {
-        // 첫 글자 대문자 변환
-        transcript = transcript.charAt(0).toUpperCase() + transcript.slice(1);
-      }
+      if (!transcript) return;
 
       const textarea = document.getElementById('journalInput');
-      if (textarea.value.trim() === '') {
-        textarea.value = transcript;
+      let currentText = textarea.value.trim();
+
+      if (currentText === '') {
+        textarea.value = capitalizeSentences(transcript);
       } else {
-        textarea.value += ' ' + transcript;
+        // 기존 텍스트와 이어붙일 때 공백을 두고 전체 문장 대문자 규칙 재적용
+        textarea.value = capitalizeSentences(currentText + ' ' + transcript);
       }
     };
   }
@@ -312,10 +324,7 @@ HTML
         const match = rawResponse.match(/TRANSCRIPT:\s*(.*)/i);
         if (match && match[1]) {
           let sentence = match[1].replace(/\[|\]/g, '').trim();
-          if (sentence) {
-            sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
-          }
-          lastRecordedSentence = sentence;
+          lastRecordedSentence = capitalizeSentences(sentence);
         }
 
         const cleanResponse = rawResponse.replace(/TRANSCRIPT:.*(\r?\n|$)/i, '');
