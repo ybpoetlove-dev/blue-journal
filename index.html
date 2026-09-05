@@ -165,7 +165,7 @@ HTML
     btn.disabled = true;
     btn.textContent = 'AI 분석 중...';
     resultBox.innerHTML = 'AI가 일기를 읽고 한국어로 교정 피드백을 작성하고 있습니다...';
-    lastRecordedSentence = ""; // 텍스트 피드백 시 녹음 문장 초기화
+    lastRecordedSentence = "";
 
     const promptText = `사용자가 작성한 영어 일기/문장: "${text}"
 
@@ -197,7 +197,7 @@ HTML
     }
   }
 
-  // 2. 음성 입력 (STT)
+  // 2. 음성 입력 (STT) - 첫 글자 자동 대문자 변환 기능 추가
   let recognition, isRecognizing = false;
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -210,7 +210,19 @@ HTML
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         transcript += event.results[i][0].transcript;
       }
-      document.getElementById('journalInput').value += ' ' + transcript;
+      
+      transcript = transcript.trim();
+      if (transcript) {
+        // 첫 글자 대문자 변환
+        transcript = transcript.charAt(0).toUpperCase() + transcript.slice(1);
+      }
+
+      const textarea = document.getElementById('journalInput');
+      if (textarea.value.trim() === '') {
+        textarea.value = transcript;
+      } else {
+        textarea.value += ' ' + transcript;
+      }
     };
   }
 
@@ -234,7 +246,7 @@ HTML
 
   // 3. 발음 분석 (녹음 데이터 분석)
   let mediaRecorder, audioChunks = [];
-  let lastRecordedSentence = ""; // 오직 내가 녹음한 영어 문장만 따로 담아둘 변수
+  let lastRecordedSentence = ""; 
   
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
@@ -274,7 +286,7 @@ HTML
     if (!apiKey) return alert('상단에 Gemini API Key를 먼저 저장해 주세요.');
     const resultBox = document.getElementById('resultBox');
     resultBox.innerHTML = '🎧 AI가 음성을 듣고 발음, 억양, 강세를 분석하고 있습니다...';
-    lastRecordedSentence = ""; // 초기화
+    lastRecordedSentence = "";
 
     const reader = new FileReader();
     reader.readAsDataURL(blob);
@@ -284,7 +296,7 @@ HTML
 
       const promptText = `첨부된 사용자의 음성을 듣고 다음 규칙을 엄격히 지켜 응답해 주세요.
 
-1. 첫 줄에 정확히 'TRANSCRIPT: [사용자가 말한 영어 문장만 영어로 적기]' 형식으로 작성할 것. (예: TRANSCRIPT: I went to the park today.)
+1. 첫 줄에 정확히 'TRANSCRIPT: [사용자가 말한 영어 문장만 첫 글자 대문자로 영어로 적기]' 형식으로 작성할 것. (예: TRANSCRIPT: I went to the park today.)
 2. 그 아래부터는 한국어로 발음, 억양, 강세, 종합 코칭을 상세히 작성할 것.`;
 
       try {
@@ -297,13 +309,15 @@ HTML
           }]
         });
 
-        // 'TRANSCRIPT:' 뒤에 있는 영어 문장만 쏙 빼내서 변수에 저장
         const match = rawResponse.match(/TRANSCRIPT:\s*(.*)/i);
         if (match && match[1]) {
-          lastRecordedSentence = match[1].replace(/\[|\]/g, '').trim();
+          let sentence = match[1].replace(/\[|\]/g, '').trim();
+          if (sentence) {
+            sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+          }
+          lastRecordedSentence = sentence;
         }
 
-        // 화면에 보여줄 때는 TRANSCRIPT 줄을 깔끔하게 지우고 마크다운 포맷 적용
         const cleanResponse = rawResponse.replace(/TRANSCRIPT:.*(\r?\n|$)/i, '');
         resultBox.innerHTML = formatMarkdown(cleanResponse);
 
@@ -317,11 +331,9 @@ HTML
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
-  // 원어민 음성 듣기 버튼 동작: 입력창에 글이 있으면 그것을 읽고, 없으면 오직 내가 녹음했던 영어 문장만 읽음
   function speakTargetText() {
     let textToSpeak = document.getElementById('journalInput').value.trim();
     
-    // 입력창이 비어있고, 직전에 녹음한 영어 문장이 있다면 그것을 사용
     if (!textToSpeak && lastRecordedSentence) {
       textToSpeak = lastRecordedSentence;
     }
@@ -344,7 +356,6 @@ HTML
     window.speechSynthesis.speak(utterance);
   }
 
-  // 단어장 기능
   let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
   function renderPhrases() {
     const list = document.getElementById('phraseList');
