@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -31,6 +30,7 @@
     .btn-secondary { background: #e2e8f0; color: #334155; }
     .btn-danger { background: #ef4444; color: white; }
     .btn-success { background: #22c55e; color: white; }
+    .btn-accent { background: #7c3aed; color: white; }
     button:disabled { background: #cbd5e1; cursor: not-allowed; }
 
     .result-box { background: #f1f5f9; border-radius: 8px; padding: 12px 14px; min-height: 90px; font-size: 14.5px; line-height: 1.55; color: #0f172a; word-break: break-word; }
@@ -38,16 +38,14 @@
     .result-box p { margin: 6px 0; }
     .result-box ul { padding-left: 18px; margin: 6px 0; }
 
-    .audio-controls { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-size: 13.5px; }
+    .audio-controls { margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-size: 13.5px; background: #f8fafc; padding: 8px; border-radius: 6px; border: 1px solid #e2e8f0; }
     audio { width: 100%; margin-top: 6px; }
 
-    /* 대시보드 & 통계 스타일 */
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; margin-bottom: 10px; }
     .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 4px; }
     .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
     .stat-num { font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 2px; }
 
-    /* Before - After 카드 스타일 */
     .ba-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; margin-bottom: 8px; font-size: 13.5px; }
     .ba-date { font-size: 11px; color: #64748b; margin-bottom: 4px; font-weight: bold; }
     .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
@@ -56,7 +54,6 @@
 
     .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
-
     .phrase-list { list-style: none; padding: 0; margin: 0; }
     .phrase-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; margin-bottom: 5px; font-size: 13.5px; }
   </style>
@@ -91,22 +88,23 @@
     </div>
   </div>
 
-  <!-- AI 피드백 결과 카드 -->
+  <!-- AI 피드백 및 원어민 듣기 / 다시 말하기 카드 -->
   <div class="card">
-    <div class="card-title">💡 AI Feedback</div>
+    <div class="card-title">💡 AI Feedback & Practice</div>
     <div id="resultBox" class="result-box">음성 입력 후 피드백을 요청해보세요.</div>
     
     <div class="audio-controls">
-      <div>
-        <span>속도:</span>
-        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="width: 70px; height: 16px;">
-        <span id="rateVal">1.0x</span>
+      <div style="display: flex; align-items: center; gap: 6px; width: 100%; margin-bottom: 6px;">
+        <span style="font-size: 12px;">속도:</span>
+        <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="flex: 1; height: 16px;">
+        <span id="rateVal" style="font-size: 12px; width: 30px;">1.0x</span>
       </div>
-      <button class="btn-secondary" onclick="speakTargetText()">🔊 원어민 음성 듣기</button>
+      <button class="btn-secondary" style="flex: 1;" onclick="speakTargetText()">🔊 원어민 음성 듣기</button>
+      <button class="btn-accent" style="flex: 1;" onclick="applyAndRetry()">🔄 이 교정 문장으로 다시 말하기</button>
     </div>
   </div>
 
-  <!-- 📊 나의 영어 성장 리포트 (통계 & 월간 데이터) -->
+  <!-- 성장 리포트 -->
   <div class="card">
     <div class="card-title">📈 My Speaking Growth</div>
     <div class="stats-grid">
@@ -124,7 +122,6 @@
       </div>
     </div>
 
-    <!-- 월간 교정 패턴 기록 메모 -->
     <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
       <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">🔍 이번 달 집중 교정 포인트</div>
       <div class="input-row">
@@ -135,18 +132,16 @@
     </div>
   </div>
 
-  <!-- 🔄 Before & After 실력 변화 기록장 -->
+  <!-- Before & After 비교 기록장 -->
   <div class="card">
-    <div class="card-title">
-      <span>🔄 Before & After (변화 비교)</span>
-    </div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">처음 말했던 문장과 다시 다듬은 문장을 기록해 성장 변화를 비교해 보세요.</div>
+    <div class="card-title">🔄 Before & After (변화 비교)</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">처음 말했던 문장과 다시 연습한 교정 문장을 비교해 보세요.</div>
     
     <div class="input-row">
       <input type="text" id="baBefore" placeholder="Before (처음 말한 문장)">
     </div>
     <div class="input-row">
-      <input type="text" id="baAfter" placeholder="After (교정/개선된 문장)">
+      <input type="text" id="baAfter" placeholder="After (다시 연습/교정된 문장)">
     </div>
     <div class="input-row">
       <input type="text" id="baNote" placeholder="발음/문법 변화 메모 (선택)">
@@ -181,7 +176,7 @@
   }
 
   function formatMarkdown(text) {
-    let formatted = text
+    return text
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h3>$1</h3>')
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -190,27 +185,23 @@
       .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
       .replace(/\n\n/g, '<br>')
       .replace(/\n/g, '<br>');
-    return formatted;
   }
 
   async function callGeminiAPI(payload) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
-      if (data.error) throw new Error(data.error.message || 'API 오류가 발생했습니다.');
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        return data.candidates[0].content.parts[0].text;
-      }
-      throw new Error('응답을 받지 못했습니다.');
-    } catch (err) { throw err; }
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message || 'API 오류가 발생했습니다.');
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    throw new Error('응답을 받지 못했습니다.');
   }
 
-  // 문장 첫 글자 & 문장 부호(., ?, !) 뒤 대문자 정교화 함수
   function capitalizeSentences(text) {
     if (!text) return '';
     let cleaned = text.trim();
@@ -218,11 +209,12 @@
     return cleaned.replace(/([.?!]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
   }
 
-  // --- 데이터 관리 & 통계 ---
   let sentenceCount = parseInt(localStorage.getItem('stat_sentence_count') || '0');
   let audioCount = parseInt(localStorage.getItem('stat_audio_count') || '0');
   let baList = JSON.parse(localStorage.getItem('ba_records') || '[]');
   let habitNote = localStorage.getItem('habit_note') || '';
+  let lastAnalyzedBeforeText = ""; // 최근에 입력/말했던 원본 문장 저장용
+  let lastSuggestedAfterText = ""; // AI가 제안해 준 교정 문장 저장용
 
   function updateDashboard() {
     document.getElementById('statSentenceCount').textContent = sentenceCount + '개';
@@ -247,7 +239,6 @@
     }
   }
 
-  // --- Before & After 카드 관리 ---
   function addBACard() {
     const before = document.getElementById('baBefore').value.trim();
     const after = document.getElementById('baAfter').value.trim();
@@ -292,12 +283,13 @@
     `).join('');
   }
 
-  // --- 1. AI 피드백 처리 ---
+  // 1. AI 피드백 및 정답 추출
   async function getAIFeedback() {
     if (!apiKey) return alert('Gemini API Key를 입력 후 저장해 주세요.');
     const text = document.getElementById('journalInput').value.trim();
     if (!text) return alert('문장을 입력하거나 음성으로 말해 주세요.');
 
+    lastAnalyzedBeforeText = text; // Before용 원본 저장
     const btn = document.getElementById('submitBtn');
     const resultBox = document.getElementById('resultBox');
     
@@ -308,13 +300,23 @@
     const promptText = `사용자가 작성한 영문장: "${text}"
 
 위 문장을 분석하여 한국어로 피드백을 제공해 주세요.
-1. 자연스러운 영어 교정 문장 (Before-After에 활용하기 좋게 명확히 제공)
-2. 뉘앙스 및 발음/문법 포인트
-3. 유용한 표현 레퍼런스`;
+반드시 아래 규칙을 지켜주세요:
+1. 첫 줄에 정확히 'SUGGESTED: [가장 자연스럽고 매끄러운 교정 영문장]' 형식으로 한 줄만 적어주세요.
+2. 그 아래부터는 상세한 교정 이유, 뉘앙스 및 발음 포인트를 한국어로 작성해 주세요.`;
 
     try {
-      const resultText = await callGeminiAPI({ contents: [{ parts: [{ text: promptText }] }] });
-      resultBox.innerHTML = formatMarkdown(resultText);
+      const rawResponse = await callGeminiAPI({ contents: [{ parts: [{ text: promptText }] }] });
+      
+      // SUGGESTED 영문장 추출
+      const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
+      if (match && match[1]) {
+        lastSuggestedAfterText = capitalizeSentences(match[1].replace(/\[|\]/g, '').trim());
+      } else {
+        lastSuggestedAfterText = text;
+      }
+
+      const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
+      resultBox.innerHTML = formatMarkdown(cleanResponse);
     } catch (err) {
       resultBox.innerText = err.message;
     } finally {
@@ -325,7 +327,30 @@
     }
   }
 
-  // --- 2. 음성 인식 (STT) 및 문장 수 카운트 ---
+  // 2. '이 교정 문장으로 다시 말하기' 기능 (자동으로 Before & After 등록 및 입력창 세팅)
+  function applyAndRetry() {
+    if (!lastAnalyzedBeforeText || !lastSuggestedAfterText) {
+      return alert('먼저 AI 피드백을 받아주세요!');
+    }
+
+    // Before-After 목록에 자동 등록
+    const now = new Date();
+    const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
+    baList.unshift({ 
+      date: dateStr, 
+      before: lastAnalyzedBeforeText, 
+      after: lastSuggestedAfterText, 
+      note: 'AI 원어민 피드백 기반 리피팅 연습' 
+    });
+    localStorage.setItem('ba_records', JSON.stringify(baList));
+    renderBACards();
+
+    // 입력창을 교정된 문장으로 채워주어 바로 원어민 음성으로 확인하거나 재연습 가능하게 함
+    document.getElementById('journalInput').value = lastSuggestedAfterText;
+    alert('✨ Before & After에 자동 저장되었습니다! 이제 [원어민 음성 듣기]로 발음을 듣고 따라 말해보세요.');
+  }
+
+  // 3. 음성 인식 (STT)
   let recognition, isRecognizing = false;
   if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -339,23 +364,16 @@
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         transcript += event.results[i][0].transcript;
       }
-      
       transcript = transcript.trim();
       if (!transcript) return;
 
-      // 말한 문장 카운트 증가
       sentenceCount++;
       localStorage.setItem('stat_sentence_count', sentenceCount);
       updateDashboard();
 
       const textarea = document.getElementById('journalInput');
       let currentText = textarea.value.trim();
-
-      if (currentText === '') {
-        textarea.value = capitalizeSentences(transcript);
-      } else {
-        textarea.value = capitalizeSentences(currentText + ' ' + transcript);
-      }
+      textarea.value = currentText === '' ? capitalizeSentences(transcript) : capitalizeSentences(currentText + ' ' + transcript);
     };
   }
 
@@ -375,9 +393,8 @@
     }
   }
 
-  // --- 3. 발음 녹음 및 분석 ---
+  // 4. 발음 녹음 및 분석
   let mediaRecorder, audioChunks = [];
-  let lastRecordedSentence = "";
 
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
@@ -401,7 +418,6 @@
         player.src = URL.createObjectURL(audioBlob);
         player.style.display = "block";
         
-        // 발음 분석 횟수 카운트 증가
         audioCount++;
         localStorage.setItem('stat_audio_count', audioCount);
         updateDashboard();
@@ -427,32 +443,34 @@
       const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
       const promptText = `첨부된 음성을 듣고 한국어로 상세히 피드백해 주세요.
-1. 첫 줄: 'TRANSCRIPT: [사용자가 말한 정확한 영문장]'
-2. 발음 정확도, 강세, 억양 및 개선된 발음 포인트 작성`;
+1. 첫 줄: 'SUGGESTED: [음성에서 감지된 올바른 영문장]'
+2. 발음 정확도, 강세, 억양 및 개선 포인트 작성`;
 
       try {
         const rawResponse = await callGeminiAPI({
           contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64Audio } }, { text: promptText }] }]
         });
 
-        const match = rawResponse.match(/TRANSCRIPT:\s*(.*)/i);
+        const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
         if (match && match[1]) {
-          lastRecordedSentence = capitalizeSentences(match[1].replace(/\[|\]/g, '').trim());
+          let spokenText = match[1].replace(/\[|\]/g, '').trim();
+          lastAnalyzedBeforeText = spokenText;
+          lastSuggestedAfterText = capitalizeSentences(spokenText);
         }
 
-        const cleanResponse = rawResponse.replace(/TRANSCRIPT:.*(\r?\n|$)/i, '');
+        const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
         resultBox.innerHTML = formatMarkdown(cleanResponse);
       } catch (err) { resultBox.innerText = err.message; }
     };
   }
 
-  // --- TTS 및 단어장 ---
+  // 5. 원어민 TTS 음성 듣기
   document.getElementById('speechRate').addEventListener('input', (e) => {
     document.getElementById('rateVal').textContent = e.target.value + 'x';
   });
 
   function speakTargetText() {
-    let textToSpeak = document.getElementById('journalInput').value.trim() || lastRecordedSentence;
+    let textToSpeak = document.getElementById('journalInput').value.trim() || lastSuggestedAfterText;
     if (!textToSpeak) return alert('읽을 텍스트가 없습니다.');
     
     window.speechSynthesis.cancel();
@@ -490,7 +508,6 @@
     renderPhrases();
   }
 
-  // 초기화
   renderPhrases();
   updateDashboard();
 </script>
