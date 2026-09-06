@@ -232,7 +232,6 @@
       alert('API Key가 없습니다. 상단 입력란에 키를 입력해 주세요.');
       throw new Error('API Key가 설정되지 않았습니다.');
     }
-    // 최신 권장 모델인 gemini-3.6-flash로 업데이트 반영
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${currentKey}`;
     const response = await fetch(url, {
       method: 'POST',
@@ -265,6 +264,7 @@
   let lastAnalyzedBeforeText = ""; 
   let lastSuggestedAfterText = ""; 
   let lastLatestFeedback = "";
+  let currentAudioBase64 = null; // 현재 녹음된 오디오 데이터 보관용
 
   function updateDashboard() {
     document.getElementById('statSentenceCount').textContent = sentenceCount + '개';
@@ -296,7 +296,7 @@
 
     baList.unshift({ 
       date: dateStr, 
-      before: before || '(음성 녹음)', 
+      before: before || '(텍스트 입력)', 
       after: after, 
       feedback: feedback,
       audioBase64: audioBase64 || null
@@ -305,8 +305,8 @@
     try {
       localStorage.setItem('ba_records', JSON.stringify(baList));
     } catch (e) {
-      const lightList = baList.map(item => ({ ...item, audioBase64: null }));
-      try { localStorage.setItem('ba_records', JSON.stringify(lightList)); } catch(err) {}
+      // 로컬 스토리지 용량 초과 방지를 위한 예외 처리
+      console.warn('Storage save warning:', e);
     }
     updateDashboard();
   }
@@ -357,7 +357,7 @@
                 
                 <div class="ba-audio-box">
                   <div style="font-size: 11.5px; font-weight: bold; color: #334155; margin-bottom: 2px;">🎙️ 내 음성 녹음 재생</div>
-                  ${r.audioBase64 ? `<audio controls src="${r.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 피드백으로 생성되어 녹음 파일이 없습니다)</div>'}
+                  ${r.audioBase64 ? `<audio controls src="${r.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 입력으로 생성되어 녹음 파일이 없습니다)</div>'}
                 </div>
               </div>
             `).join('')}
@@ -412,7 +412,8 @@
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
-      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, null);
+      // 텍스트 제출 시에는 현재 녹음된 오디오가 있다면 함께 저장, 없으면 null
+      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, currentAudioBase64);
       updateDashboard();
     } catch (err) {
       resultBox.innerText = err.message;
@@ -499,16 +500,16 @@
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          const base64Audio = reader.result;
+          currentAudioBase64 = reader.result; // 녹음 완료 시점에 변수에 보관
           
-          player.src = base64Audio;
+          player.src = currentAudioBase64;
           player.style.display = "block";
           
           audioCount++;
           try { localStorage.setItem('stat_audio_count', audioCount); } catch(e) {}
           updateDashboard();
 
-          await analyzeAudioPronunciation(audioBlob, base64Audio);
+          await analyzeAudioPronunciation(audioBlob, currentAudioBase64);
         };
       };
 
@@ -541,6 +542,7 @@
         let spokenText = cleanSentence(match[1]);
         lastAnalyzedBeforeText = spokenText;
         lastSuggestedAfterText = spokenText;
+        document.getElementById('journalInput').value = spokenText;
       }
 
       const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
@@ -548,6 +550,7 @@
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
+      // 음성 녹음 분석 시에는 녹음된 오디오 데이터(base64AudioUrl)를 함께 저장
       addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, base64AudioUrl);
       updateDashboard();
     } catch (err) { resultBox.innerText = err.message; }
