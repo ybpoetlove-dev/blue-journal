@@ -53,12 +53,14 @@
     .calendar-body { padding: 10px; background: #fafafa; border-top: 1px solid #e2e8f0; display: none; }
     .calendar-body.active { display: block; }
 
-    .ba-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; position: relative; }
-    .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
-    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
-    .ba-feedback { background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #334155; }
-    .ba-audio-box { margin-top: 6px; background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
-    .ba-audio { margin-top: 4px; width: 100%; height: 40px; }
+    .ba-group-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 10px; font-size: 13px; position: relative; }
+    .ba-after { color: #15803d; background: #dcfce7; padding: 6px 8px; border-radius: 4px; font-weight: bold; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    
+    .attempt-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; margin-bottom: 6px; }
+    .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; font-size: 12px; }
+    .ba-feedback { background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 4px; font-size: 11.5px; color: #334155; }
+    .ba-audio-box { margin-top: 4px; background: #fff; padding: 4px 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
+    .ba-audio { margin-top: 2px; width: 100%; height: 36px; }
 
     .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
@@ -148,7 +150,7 @@
   <!-- 캘린더 연습 기록장 -->
   <div class="card">
     <div class="card-title">📅 캘린더 연습 기록장</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">같은 날짜의 기록들은 하나의 날짜 폴더 안에 차곡차곡 쌓입니다.</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">같은 날짜 안에서 동일한 문장 연습은 하나의 섹션으로 묶여 관리됩니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -336,7 +338,7 @@
     updateDashboard();
   }
 
-  function deleteBACard(globalIndex) {
+  function deleteSingleAttempt(globalIndex) {
     baList.splice(globalIndex, 1);
     try { localStorage.setItem('ba_records', JSON.stringify(baList)); } catch(e) {}
     updateDashboard();
@@ -349,48 +351,71 @@
       return;
     }
 
-    const grouped = {};
+    // 1단계: 날짜별로 그룹화
+    const byDate = {};
     baList.forEach((item, originalIndex) => {
-      const normalizedDate = normalizeDateString(item.date);
-      if (!grouped[normalizedDate]) grouped[normalizedDate] = [];
-      grouped[normalizedDate].push({ ...item, originalIndex });
+      const dateKey = normalizeDateString(item.date);
+      if (!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey].push({ ...item, originalIndex });
     });
 
     let html = '';
-    const dateKeys = Object.keys(grouped);
+    const dateKeys = Object.keys(byDate);
+    
     dateKeys.forEach((dateKey, idx) => {
-      const records = grouped[dateKey];
+      const dateRecords = byDate[dateKey];
       const isOpen = idx === 0 ? 'active' : '';
-      
+
+      // 2단계: 같은 날짜 안에서 교정 문장(after) 기준으로 다시 그룹화
+      const bySentence = {};
+      dateRecords.forEach(rec => {
+        const keyText = rec.after.trim().toLowerCase();
+        if (!bySentence[keyText]) {
+          bySentence[keyText] = {
+            afterText: rec.after,
+            attempts: []
+          };
+        }
+        bySentence[keyText].attempts.push(rec);
+      });
+
+      const sentenceGroups = Object.values(bySentence);
+
       html += `
         <div class="calendar-accordion-item">
           <div class="calendar-header" onclick="toggleAccordion(this)">
-            <span>📅 ${dateKey} (${records.length}개 세트)</span>
+            <span>📅 ${dateKey} (문장 섹션 ${sentenceGroups.length개})</span>
             <span style="font-size: 12px; color: #64748b;">▼</span>
           </div>
           <div class="calendar-body ${isOpen}">
-            ${records.map(r => `
-              <div class="ba-card">
-                <div style="display: flex; justify-content: flex-end; margin-bottom: 2px;">
-                  <span style="cursor: pointer; font-size: 11px; color: #94a3b8;" onclick="deleteBACard(${r.originalIndex})">삭제</span>
-                </div>
-                <div class="ba-before">🔴 내가 말한 문장: ${r.before}</div>
+            ${sentenceGroups.map(group => `
+              <div class="ba-group-card">
                 <div class="ba-after">
-                  <span>🟢 교정된 문장: ${r.after}</span>
-                  <button class="btn-secondary" style="font-size: 10px; padding: 2px 6px;" onclick="addSpecificPhrase('${encodeURIComponent(r.after)}')">⭐ 표현집 저장</button>
+                  <span>🟢 교정 목표 문장: ${group.afterText}</span>
+                  <button class="btn-secondary" style="font-size: 10px; padding: 2px 6px;" onclick="addSpecificPhrase('${encodeURIComponent(group.afterText)}')">⭐ 표현집 저장</button>
                 </div>
-                ${r.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 및 발음 분석:</strong><br>${r.feedback.replace(/<[^>]*>?/gm, '').substring(0, 150)}...</div>` : ''}
                 
-                <div class="ba-audio-box">
-                  <div style="font-size: 11.5px; font-weight: bold; color: #334155; margin-bottom: 2px;">🎙️ 내 음성 녹음 재생</div>
-                  ${r.audioBase64 ? `<audio controls preload="metadata" src="${r.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 입력으로 생성되어 녹음 파일이 없습니다)</div>'}
-                </div>
+                <div style="font-size: 11.5px; font-weight: bold; color: #64748b; margin-bottom: 4px;">📝 시도 및 피드백 이력 (${group.attempts.length}회)</div>
+                
+                ${group.attempts.map(att => `
+                  <div class="attempt-item">
+                    <div style="display: flex; justify-content: flex-end; margin-bottom: 2px;">
+                      <span style="cursor: pointer; font-size: 10.5px; color: #94a3b8;" onclick="deleteSingleAttempt(${att.originalIndex})">이력 삭제</span>
+                    </div>
+                    <div class="ba-before">🔴 내가 말한 문장: ${att.before}</div>
+                    ${att.feedback ? `<div class="ba-feedback">💡 ${att.feedback.replace(/<[^>]*>?/gm, '').substring(0, 120)}...</div>` : ''}
+                    <div class="ba-audio-box">
+                      ${att.audioBase64 ? `<audio controls preload="metadata" src="${att.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 2px 0;">(텍스트 입력 기록)</div>'}
+                    </div>
+                  </div>
+                `).join('')}
               </div>
             `).join('')}
           </div>
         </div>
       `;
     });
+
     container.innerHTML = html;
   }
 
