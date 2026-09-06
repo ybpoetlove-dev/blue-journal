@@ -57,7 +57,8 @@
     .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
     .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
     .ba-feedback { background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #334155; }
-    .ba-audio { margin-top: 6px; width: 100%; height: 35px; }
+    .ba-audio-box { margin-top: 6px; background: #f8fafc; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
+    .ba-audio { margin-top: 4px; width: 100%; height: 35px; }
 
     .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
@@ -144,10 +145,10 @@
     </div>
   </div>
 
-  <!-- 캘린더 연습 기록장 (모든 기록 자동 연동 통합) -->
+  <!-- 캘린더 연습 기록장 -->
   <div class="card">
     <div class="card-title">📅 캘린더 연습 기록장</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">녹음, 피드백, 교정 문장이 하나의 세트로 자동 저장됩니다.</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">녹음 파일, AI 피드백, 교정 문장이 하나의 세트로 자동 연동됩니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -269,7 +270,6 @@
     }
   }
 
-  // 통합 기록 저장 함수
   function addFullRecord(before, after, feedback, audioBlobUrl) {
     const now = new Date();
     const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
@@ -335,7 +335,11 @@
                   <button class="btn-secondary" style="font-size: 10px; padding: 2px 6px;" onclick="addSpecificPhrase('${encodeURIComponent(r.after)}')">⭐ 표현집 저장</button>
                 </div>
                 ${r.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 및 발음 분석:</strong><br>${r.feedback.replace(/<[^>]*>?/gm, '').substring(0, 150)}...</div>` : ''}
-                ${r.audioUrl ? `<audio controls src="${r.audioUrl}" class="ba-audio"></audio>` : ''}
+                
+                <div class="ba-audio-box">
+                  <div style="font-size: 11.5px; font-weight: bold; color: #334155; margin-bottom: 2px;">🎙️ 내 음성 녹음 재생</div>
+                  ${r.audioUrl ? `<audio controls src="${r.audioUrl}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 피드백으로 생성되어 녹음 파일이 없습니다)</div>'}
+                </div>
               </div>
             `).join('')}
           </div>
@@ -389,7 +393,6 @@
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
-      // 캘린더 기록 및 통계 자동 연동 저장
       addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, null);
       updateDashboard();
     } catch (err) {
@@ -524,7 +527,6 @@
         resultBox.innerHTML = formatMarkdown(cleanResponse);
         actionPanel.style.display = 'block';
 
-        // 음성 녹음과 분석 결과 통합 기록 자동 추가
         addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, audioUrl);
         updateDashboard();
       } catch (err) { resultBox.innerText = err.message; }
