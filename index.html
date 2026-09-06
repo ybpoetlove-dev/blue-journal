@@ -205,10 +205,13 @@
     throw new Error('응답을 받지 못했습니다.');
   }
 
-  function capitalizeSentences(text) {
+  // 텍스트 정제 함수 (불필요한 마크다운 별표 기호 제거)
+  function cleanSentence(text) {
     if (!text) return '';
-    let cleaned = text.trim();
-    if (cleaned.length > 0) cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    let cleaned = text.replace(/[*#_[\]]/g, '').trim();
+    if (cleaned.length > 0) {
+      cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+    }
     return cleaned.replace(/([.?!]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
   }
 
@@ -243,8 +246,8 @@
   }
 
   function addBACard() {
-    const before = document.getElementById('baBefore').value.trim();
-    const after = document.getElementById('baAfter').value.trim();
+    const before = cleanSentence(document.getElementById('baBefore').value);
+    const after = cleanSentence(document.getElementById('baAfter').value);
     const note = document.getElementById('baNote').value.trim();
 
     if (!before || !after) return alert('Before와 After 문장을 모두 입력해 주세요.');
@@ -288,7 +291,7 @@
 
   async function getAIFeedback() {
     if (!apiKey) return alert('Gemini API Key를 입력 후 저장해 주세요.');
-    const text = document.getElementById('journalInput').value.trim();
+    const text = cleanSentence(document.getElementById('journalInput').value);
     if (!text) return alert('문장을 입력하거나 음성으로 말해 주세요.');
 
     lastAnalyzedBeforeText = text; 
@@ -305,7 +308,7 @@
 
 위 문장을 분석하여 한국어로 피드백을 제공해 주세요.
 반드시 아래 규칙을 지켜주세요:
-1. 첫 줄에 정확히 'SUGGESTED: [가장 자연스럽고 매끄러운 교정 영문장]' 형식으로 한 줄만 적어주세요.
+1. 첫 줄에 정확히 'SUGGESTED: [가장 자연스럽고 매끄러운 교정 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
 2. 그 아래부터는 상세한 교정 이유, 뉘앙스 및 발음 포인트를 한국어로 작성해 주세요.`;
 
     try {
@@ -313,7 +316,7 @@
       
       const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
       if (match && match[1]) {
-        lastSuggestedAfterText = capitalizeSentences(match[1].replace(/\[|\]/g, '').trim());
+        lastSuggestedAfterText = cleanSentence(match[1]);
       } else {
         lastSuggestedAfterText = text;
       }
@@ -331,7 +334,7 @@
     }
   }
 
-  // '교정문장 재말하기' 클릭 시 Before/After 저장 + 곧바로 마이크 녹음(재말하기) 시작
+  // '교정문장 재말하기' 클릭 시 Before/After 저장 + 곧바로 녹음 모드로 진입
   async function applyAndRetry() {
     if (!lastAnalyzedBeforeText || !lastSuggestedAfterText) {
       return alert('먼저 AI 피드백을 받아주세요!');
@@ -350,7 +353,7 @@
 
     document.getElementById('journalInput').value = lastSuggestedAfterText;
     
-    // 버튼 클릭 즉시 곧바로 마이크 녹음(재말하기) 함수 자동 실행
+    // 녹음 버튼을 프로그래밍 방식으로 안전하게 트리거하여 마이크 활성화
     await startDirectRecording();
   }
 
@@ -367,7 +370,7 @@
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         transcript += event.results[i][0].transcript;
       }
-      transcript = transcript.trim();
+      transcript = cleanSentence(transcript);
       if (!transcript) return;
 
       sentenceCount++;
@@ -376,7 +379,7 @@
 
       const textarea = document.getElementById('journalInput');
       let currentText = textarea.value.trim();
-      textarea.value = currentText === '' ? capitalizeSentences(transcript) : capitalizeSentences(currentText + ' ' + transcript);
+      textarea.value = currentText === '' ? transcript : currentText + ' ' + transcript;
     };
   }
 
@@ -400,8 +403,6 @@
 
   async function toggleRecord() {
     const btn = document.getElementById('recBtn');
-    const player = document.getElementById('audioPlayer');
-
     if (mediaRecorder && mediaRecorder.state === "recording") {
       mediaRecorder.stop();
       btn.textContent = "🔴 내 발음 녹음 & AI 발음 분석";
@@ -411,7 +412,6 @@
     await startDirectRecording();
   }
 
-  // 재말하기 및 일반 녹음 시 공통으로 실행되는 녹음 시작 함수
   async function startDirectRecording() {
     const btn = document.getElementById('recBtn');
     const player = document.getElementById('audioPlayer');
@@ -454,7 +454,7 @@
       const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
       const promptText = `첨부된 음성을 듣고 한국어로 상세히 피드백해 주세요.
-1. 첫 줄에 정확히 'SUGGESTED: [음성에서 감지된 올바른 영문장]' 형식으로 한 줄만 적어주세요.
+1. 첫 줄에 정확히 'SUGGESTED: [음성에서 감지된 올바른 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
 2. 그 아래부터는 발음 정확도, 강세, 억양 및 개선 포인트를 작성해 주세요.`;
 
       try {
@@ -464,9 +464,9 @@
 
         const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
         if (match && match[1]) {
-          let spokenText = match[1].replace(/\[|\]/g, '').trim();
+          let spokenText = cleanSentence(match[1]);
           lastAnalyzedBeforeText = spokenText;
-          lastSuggestedAfterText = capitalizeSentences(spokenText);
+          lastSuggestedAfterText = spokenText;
         }
 
         const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
@@ -481,7 +481,7 @@
   });
 
   function speakTargetText() {
-    let textToSpeak = document.getElementById('journalInput').value.trim() || lastSuggestedAfterText;
+    let textToSpeak = cleanSentence(document.getElementById('journalInput').value) || lastSuggestedAfterText;
     if (!textToSpeak) return alert('읽을 텍스트가 없습니다.');
     
     window.speechSynthesis.cancel();
