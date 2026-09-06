@@ -255,16 +255,13 @@
     return cleaned.replace(/([.?!]\s+)([a-z])/g, (match, p1, p2) => p1 + p2.toUpperCase());
   }
 
-  // 기존 날짜 포맷들을 'YYYY.MM.DD' 형태로 정규화하여 하나로 통합
   function normalizeDateString(dateStr) {
     if (!dateStr) {
       const now = new Date();
       return `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
     }
-    // 예: "9/6" 또는 "2026.9.6" 형태를 표준형으로 변환
     let parts = dateStr.split(/[\/\.]\s*/);
     if (parts.length === 2) {
-      // 연도가 빠진 형태 (예: 9/6 또는 9.6)인 경우 현재 연도 붙임
       const year = new Date().getFullYear();
       const month = String(parts[0]).padStart(2, '0');
       const day = String(parts[1]).padStart(2, '0');
@@ -282,7 +279,6 @@
   let audioCount = parseInt(localStorage.getItem('stat_audio_count') || '0');
   let rawBaList = JSON.parse(localStorage.getItem('ba_records') || '[]');
   
-  // 저장된 데이터의 날짜 형식을 일괄 정규화
   let baList = rawBaList.map(item => ({
     ...item,
     date: normalizeDateString(item.date)
@@ -454,12 +450,16 @@
     }
   }
 
-  function applyAndRetry() {
+  // 수정된 교정문장 재말하기 함수 (안정적인 비동기 실행 및 버튼 연동)
+  async function applyAndRetry() {
     if (!lastSuggestedAfterText) {
       return alert('먼저 AI 피드백을 받아주세요!');
     }
     document.getElementById('journalInput').value = lastSuggestedAfterText;
-    startDirectRecording();
+    
+    // 화면 상단으로 부드럽게 스이프트 후 녹음 시작
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    await startDirectRecording();
   }
 
   let recognition, isRecognizing = false;
