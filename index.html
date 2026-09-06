@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Blue English Journal</title>
+  <title>나만의 영어 말하기 앱</title>
   
-  <link rel="apple-touch-icon" href="https://dummyimage.com/180x180/2563eb/ffffff.png&text=📘+Blue">
-  <link rel="icon" href="https://dummyimage.com/180x180/2563eb/ffffff.png&text=📘+Blue">
+  <link rel="apple-touch-icon" href="https://dummyimage.com/180x180/2563eb/ffffff.png&text=🗣️+Speaking">
+  <link rel="icon" href="https://dummyimage.com/180x180/2563eb/ffffff.png&text=🗣️+Speaking">
   <meta name="theme-color" content="#2563eb">
 
   <style>
@@ -47,17 +47,17 @@
     .stat-label { font-size: 11px; color: #64748b; font-weight: 600; }
     .stat-num { font-size: 16px; font-weight: 800; color: #2563eb; margin-top: 2px; }
 
-    /* 달력 및 아코디언 스타일 */
     .calendar-accordion-item { border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 6px; background: #fff; overflow: hidden; }
     .calendar-header { background: #f1f5f9; padding: 10px 12px; font-size: 13.5px; font-weight: bold; color: #1e3a8a; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
     .calendar-header:hover { background: #e2e8f0; }
     .calendar-body { padding: 10px; background: #fafafa; border-top: 1px solid #e2e8f0; display: none; }
     .calendar-body.active { display: block; }
 
-    .ba-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; margin-bottom: 6px; font-size: 13px; position: relative; }
+    .ba-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; position: relative; }
     .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
-    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; }
-    .ba-note { font-size: 11.5px; color: #475569; margin-top: 4px; border-top: 1px dashed #cbd5e1; padding-top: 4px; }
+    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 4px; }
+    .ba-feedback { background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #334155; }
+    .ba-audio { margin-top: 6px; width: 100%; height: 35px; }
 
     .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
@@ -68,7 +68,7 @@
 <body>
 
 <div class="container">
-  <h1>📘 Blue English Journal</h1>
+  <h1>🗣️ 나만의 영어 말하기 앱</h1>
 
   <!-- API Key 설정 -->
   <div class="card">
@@ -82,7 +82,7 @@
 
   <!-- 입력 카드 -->
   <div class="card">
-    <div class="card-title">✍️ Today's Speaking & Journal</div>
+    <div class="card-title">✍️ Today's Speaking & Practice</div>
     <textarea id="journalInput" placeholder="오늘 말하고 싶은 문장을 음성(STT)으로 말하거나 적어보세요..."></textarea>
     
     <div class="btn-group">
@@ -143,22 +143,10 @@
     </div>
   </div>
 
-  <!-- Before & After 비교 기록장 (달력/아코디언 방식) -->
+  <!-- 캘린더 기록장 (오디오 및 분석 통합) -->
   <div class="card">
-    <div class="card-title">📅 Before & After 캘린더 기록</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">날짜를 누르면 해당 날짜의 연습 기록이 펼쳐집니다.</div>
-    
-    <div class="input-row">
-      <input type="text" id="baBefore" placeholder="Before (처음 말한 문장)">
-    </div>
-    <div class="input-row">
-      <input type="text" id="baAfter" placeholder="After (다시 연습/교정된 문장)">
-    </div>
-    <div class="input-row">
-      <input type="text" id="baNote" placeholder="발음/문법 변화 메모 (선택)">
-      <button class="btn-secondary" style="font-size: 12px;" onclick="addBACard()">기록</button>
-    </div>
-
+    <div class="card-title">📅 캘린더 연습 기록장</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">날짜를 누르면 녹음 파일과 AI 피드백이 함께 펼쳐집니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -178,8 +166,10 @@
   
   function checkApiKeyStatus() {
     const statusEl = document.getElementById('apiKeyStatus');
-    if (apiKey) {
-      document.getElementById('apiKeyInput').value = apiKey;
+    const savedKey = localStorage.getItem('gemini_api_key') || '';
+    if (savedKey) {
+      apiKey = savedKey;
+      document.getElementById('apiKeyInput').value = savedKey;
       statusEl.style.color = '#15803d';
       statusEl.textContent = '✅ API Key가 안전하게 저장되어 있습니다.';
     } else {
@@ -200,7 +190,7 @@
       checkApiKeyStatus();
       alert('API Key가 성공적으로 저장되었습니다!');
     } catch (e) {
-      alert('브라우저 설정으로 인해 저장 공간(localStorage) 사용이 차단되어 있습니다.');
+      alert('브라우저 설정으로 인해 저장 공간 사용이 차단되어 있습니다.');
     }
   }
 
@@ -221,7 +211,6 @@
       alert('API Key가 없습니다. 먼저 상단에 키를 입력하고 저장해 주세요.');
       throw new Error('API Key가 설정되지 않았습니다.');
     }
-    // 최신 모델명으로 업데이트 완료
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',
@@ -251,6 +240,7 @@
   let habitNote = localStorage.getItem('habit_note') || '';
   let lastAnalyzedBeforeText = ""; 
   let lastSuggestedAfterText = ""; 
+  let lastLatestFeedback = "";
 
   function updateDashboard() {
     document.getElementById('statSentenceCount').textContent = sentenceCount + '개';
@@ -275,35 +265,42 @@
     }
   }
 
-  function addBACard() {
-    const before = cleanSentence(document.getElementById('baBefore').value);
-    const after = cleanSentence(document.getElementById('baAfter').value);
-    const note = document.getElementById('baNote').value.trim();
-
-    if (!before || !after) return alert('Before와 After 문장을 모두 입력해 주세요.');
-
+  // 통합 기록 추가 (음성 Blob URL 변환 저장 포함)
+  function addFullRecord(before, after, feedback, audioBlobUrl) {
     const now = new Date();
     const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
 
-    baList.unshift({ date: dateStr, before, after, note });
-    localStorage.setItem('ba_records', JSON.stringify(baList));
-
-    document.getElementById('baBefore').value = '';
-    document.getElementById('baAfter').value = '';
-    document.getElementById('baNote').value = '';
+    baList.unshift({ 
+      date: dateStr, 
+      before: before || '(음성 녹음)', 
+      after: after, 
+      feedback: feedback,
+      audioUrl: audioBlobUrl || null
+    });
+    
+    // 로컬 스토리지 용량 초과 방지를 위해 오디오 URL은 최신 항목 위주로 관리하거나 세션 내 유지
+    try {
+      localStorage.setItem('ba_records', JSON.stringify(baList));
+    } catch (e) {
+      // 용량 초과 시 오디오 URL을 제외하고 저장
+      const lightList = baList.map(item => ({ ...item, audioUrl: null }));
+      localStorage.setItem('ba_records', JSON.stringify(lightList));
+    }
     renderBACards();
   }
 
   function deleteBACard(globalIndex) {
     baList.splice(globalIndex, 1);
-    localStorage.setItem('ba_records', JSON.stringify(baList));
+    try {
+      localStorage.setItem('ba_records', JSON.stringify(baList));
+    } catch(e) {}
     renderBACards();
   }
 
   function renderBACards() {
     const container = document.getElementById('baContainer');
     if (baList.length === 0) {
-      container.innerHTML = '<div style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 10px;">아직 저장된 기록이 없습니다.</div>';
+      container.innerHTML = '<div style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 10px;">아직 저장된 기록이 없습니다. 녹음이나 피드백을 받아보세요!</div>';
       return;
     }
 
@@ -321,7 +318,7 @@
       html += `
         <div class="calendar-accordion-item">
           <div class="calendar-header" onclick="toggleAccordion(this)">
-            <span>📅 ${dateKey} (${records.length}개 연습)</span>
+            <span>📅 ${dateKey} (${records.length}개 세트)</span>
             <span style="font-size: 12px; color: #64748b;">▼</span>
           </div>
           <div class="calendar-body ${isOpen}">
@@ -330,9 +327,10 @@
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 2px;">
                   <span style="cursor: pointer; font-size: 11px; color: #94a3b8;" onclick="deleteBACard(${r.originalIndex})">삭제</span>
                 </div>
-                <div class="ba-before">🔴 Before: ${r.before}</div>
-                <div class="ba-after">🟢 After: ${r.after}</div>
-                ${r.note ? `<div class="ba-note">💡 ${r.note}</div>` : ''}
+                <div class="ba-before">🔴 내가 말한 내용: ${r.before}</div>
+                <div class="ba-after">🟢 교정된 문장: ${r.after}</div>
+                ${r.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 요약:</strong><br>${r.feedback.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</div>` : ''}
+                ${r.audioUrl ? `<audio controls src="${r.audioUrl}" class="ba-audio"></audio>` : ''}
               </div>
             `).join('')}
           </div>
@@ -379,8 +377,13 @@
       }
 
       const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
+      lastLatestFeedback = cleanResponse;
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
+
+      // 텍스트 분석 결과도 자동으로 기록 저장
+      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, null);
+
     } catch (err) {
       resultBox.innerText = err.message;
     } finally {
@@ -395,17 +398,6 @@
     if (!lastAnalyzedBeforeText || !lastSuggestedAfterText) {
       return alert('먼저 AI 피드백을 받아주세요!');
     }
-
-    const now = new Date();
-    const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
-    baList.unshift({ 
-      date: dateStr, 
-      before: lastAnalyzedBeforeText, 
-      after: lastSuggestedAfterText, 
-      note: 'AI 피드백 후 교정문장 재연습' 
-    });
-    localStorage.setItem('ba_records', JSON.stringify(baList));
-    renderBACards();
 
     document.getElementById('journalInput').value = lastSuggestedAfterText;
     await startDirectRecording();
@@ -478,14 +470,16 @@
       
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        player.src = URL.createObjectURL(audioBlob);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        player.src = audioUrl;
         player.style.display = "block";
         
         audioCount++;
         localStorage.setItem('stat_audio_count', audioCount);
         updateDashboard();
 
-        await analyzeAudioPronunciation(audioBlob);
+        await analyzeAudioPronunciation(audioBlob, audioUrl);
       };
 
       mediaRecorder.start();
@@ -494,7 +488,7 @@
     } catch (err) { alert("마이크 권한을 허용해 주세요."); }
   }
 
-  async function analyzeAudioPronunciation(blob) {
+  async function analyzeAudioPronunciation(blob, audioUrl) {
     const resultBox = document.getElementById('resultBox');
     const actionPanel = document.getElementById('feedbackActionPanel');
     resultBox.innerHTML = '🎧 AI가 발음을 분석하고 있습니다...';
@@ -523,8 +517,13 @@
         }
 
         const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
+        lastLatestFeedback = cleanResponse;
         resultBox.innerHTML = formatMarkdown(cleanResponse);
         actionPanel.style.display = 'block';
+
+        // 음성 녹음과 분석 결과를 하나의 세트로 묶어서 캘린더 기록에 추가!
+        addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, audioUrl);
+
       } catch (err) { resultBox.innerText = err.message; }
     };
   }
@@ -534,7 +533,7 @@
   });
 
   function speakTargetText() {
-    let textToSpeak = cleanSentence(document.getElementById('journalInput').value) || lastSuggestedAfterText;
+    let textToSpeak = lastSuggestedAfterText || cleanSentence(document.getElementById('journalInput').value);
     if (!textToSpeak) return alert('읽을 텍스트가 없습니다.');
     
     window.speechSynthesis.cancel();
