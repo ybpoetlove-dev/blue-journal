@@ -232,6 +232,7 @@
       alert('API Key가 없습니다. 상단 입력란에 키를 입력해 주세요.');
       throw new Error('API Key가 설정되지 않았습니다.');
     }
+    // 최신 안정 모델인 gemini-2.5-flash 반영
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey}`;
     const response = await fetch(url, {
       method: 'POST',
@@ -289,7 +290,7 @@
     }
   }
 
-  function addFullRecord(before, after, feedback, audioBlobUrl) {
+  function addFullRecord(before, after, feedback, audioBase64) {
     const now = new Date();
     const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
 
@@ -298,13 +299,14 @@
       before: before || '(음성 녹음)', 
       after: after, 
       feedback: feedback,
-      audioUrl: audioBlobUrl || null
+      audioBase64: audioBase64 || null
     });
     
     try {
       localStorage.setItem('ba_records', JSON.stringify(baList));
     } catch (e) {
-      const lightList = baList.map(item => ({ ...item, audioUrl: null }));
+      // 용량 초과 방지용 예외처리
+      const lightList = baList.map(item => ({ ...item, audioBase64: null }));
       try { localStorage.setItem('ba_records', JSON.stringify(lightList)); } catch(err) {}
     }
     updateDashboard();
@@ -356,7 +358,7 @@
                 
                 <div class="ba-audio-box">
                   <div style="font-size: 11.5px; font-weight: bold; color: #334155; margin-bottom: 2px;">🎙️ 내 음성 녹음 재생</div>
-                  ${r.audioUrl ? `<audio controls src="${r.audioUrl}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 피드백으로 생성되어 녹음 파일이 없습니다)</div>'}
+                  ${r.audioBase64 ? `<audio controls src="${r.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 4px 0;">(이 기록은 텍스트 피드백으로 생성되어 녹음 파일이 없습니다)</div>'}
                 </div>
               </div>
             `).join('')}
@@ -494,16 +496,22 @@
       
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-        const audioUrl = URL.createObjectURL(audioBlob);
         
-        player.src = audioUrl;
-        player.style.display = "block";
-        
-        audioCount++;
-        try { localStorage.setItem('stat_audio_count', audioCount); } catch(e) {}
-        updateDashboard();
+        // 오디오 재생 오류 방지를 위해 Base64 문자열로 변환하여 저장 및 재생 관리
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result;
+          
+          player.src = base64Audio;
+          player.style.display = "block";
+          
+          audioCount++;
+          try { localStorage.setItem('stat_audio_count', audioCount); } catch(e) {}
+          updateDashboard();
 
-        await analyzeAudioPronunciation(audioBlob, audioUrl);
+          await analyzeAudioPronunciation(audioBlob, base64Audio);
+        };
       };
 
       mediaRecorder.start();
@@ -512,43 +520,39 @@
     } catch (err) { alert("마이크 권한을 허용해 주세요."); }
   }
 
-  async function analyzeAudioPronunciation(blob, audioUrl) {
+  async function analyzeAudioPronunciation(blob, base64AudioUrl) {
     const resultBox = document.getElementById('resultBox');
     const actionPanel = document.getElementById('feedbackActionPanel');
     resultBox.innerHTML = '🎧 AI가 발음을 분석하고 있습니다...';
     actionPanel.style.display = 'none';
 
-    const reader = new FileReader();
-    reader.readAsDataURL(blob);
-    reader.onloadend = async () => {
-      const base64Audio = reader.result.split(',')[1];
-      const mimeType = blob.type.split(';')[0] || 'audio/webm';
+    const base64Data = base64AudioUrl.split(',')[1];
+    const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
-      const promptText = `첨부된 음성을 듣고 한국어로 상세히 발음 피드백해 주세요.
+    const promptText = `첨부된 음성을 듣고 한국어로 상세히 발음 피드백해 주세요.
 1. 첫 줄에 정확히 'SUGGESTED: [음성에서 감지된 교정 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
 2. 그 아래부터는 발음, 강세, 리듬, 억양 및 개선 포인트를 작성해 주세요.`;
 
-      try {
-        const rawResponse = await callGeminiAPI({
-          contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64Audio } }, { text: promptText }] }]
-        });
+    try {
+      const rawResponse = await callGeminiAPI({
+        contents: [{ parts: [{ inline_data: { mime_type: mimeType, data: base64Data } }, { text: promptText }] }]
+      });
 
-        const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
-        if (match && match[1]) {
-          let spokenText = cleanSentence(match[1]);
-          lastAnalyzedBeforeText = spokenText;
-          lastSuggestedAfterText = spokenText;
-        }
+      const match = rawResponse.match(/SUGGESTED:\s*(.*)/i);
+      if (match && match[1]) {
+        let spokenText = cleanSentence(match[1]);
+        lastAnalyzedBeforeText = spokenText;
+        lastSuggestedAfterText = spokenText;
+      }
 
-        const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
-        lastLatestFeedback = cleanResponse;
-        resultBox.innerHTML = formatMarkdown(cleanResponse);
-        actionPanel.style.display = 'block';
+      const cleanResponse = rawResponse.replace(/SUGGESTED:.*(\r?\n|$)/i, '');
+      lastLatestFeedback = cleanResponse;
+      resultBox.innerHTML = formatMarkdown(cleanResponse);
+      actionPanel.style.display = 'block';
 
-        addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, audioUrl);
-        updateDashboard();
-      } catch (err) { resultBox.innerText = err.message; }
-    };
+      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, base64AudioUrl);
+      updateDashboard();
+    } catch (err) { resultBox.innerText = err.message; }
   }
 
   document.getElementById('speechRate').addEventListener('input', (e) => {
