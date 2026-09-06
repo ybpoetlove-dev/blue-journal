@@ -55,7 +55,7 @@
 
     .ba-card { background: #fff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 8px; font-size: 13px; position: relative; }
     .ba-before { color: #dc2626; background: #fee2e2; padding: 4px 6px; border-radius: 4px; margin-bottom: 4px; }
-    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 4px; }
+    .ba-after { color: #15803d; background: #dcfce7; padding: 4px 6px; border-radius: 4px; font-weight: bold; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
     .ba-feedback { background: #f1f5f9; padding: 6px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #334155; }
     .ba-audio { margin-top: 6px; width: 100%; height: 35px; }
 
@@ -96,7 +96,7 @@
     </div>
   </div>
 
-  <!-- AI 피드백 및 다시 말하기 연동 카드 -->
+  <!-- AI 피드백 및 연동 패널 -->
   <div class="card">
     <div class="card-title">💡 AI Feedback & Retry</div>
     <div id="resultBox" class="result-box">음성 입력 후 피드백을 요청해보세요.</div>
@@ -108,14 +108,15 @@
         <input type="range" id="speechRate" min="0.5" max="1.5" step="0.1" value="1.0" style="flex: 1; height: 16px;">
         <span id="rateVal" style="font-size: 12px; width: 30px;">1.0x</span>
       </div>
-      <div style="display: flex; gap: 6px;">
+      <div style="display: flex; gap: 6px; margin-bottom: 6px;">
         <button class="btn-secondary" style="flex: 1;" onclick="speakTargetText()">🔊 원어민 듣기</button>
         <button class="btn-accent" style="flex: 1;" onclick="applyAndRetry()">🔄 교정문장 재말하기</button>
       </div>
+      <button class="btn-success" style="width: 100%; font-size: 13px;" onclick="addCurrentToPhraseBook()">⭐ My Phrase Book에 교정문장/표현 저장</button>
     </div>
   </div>
 
-  <!-- 성장 리포트 -->
+  <!-- 성장 리포트 & 교정 포인트 -->
   <div class="card">
     <div class="card-title">📈 My Speaking Growth</div>
     <div class="stats-grid">
@@ -136,17 +137,17 @@
     <div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
       <div style="font-size: 13px; font-weight: bold; color: #334155; margin-bottom: 4px;">🔍 이번 달 집중 교정 포인트</div>
       <div class="input-row">
-        <input type="text" id="habitInput" placeholder="예: 시제 틀림, R/L 발음 구분 연습 중...">
+        <input type="text" id="habitInput" placeholder="예: 전치사 오류, go the wrong way 표현 익히기...">
         <button class="btn-secondary" style="font-size: 12px; padding: 6px 10px;" onclick="saveHabitNote()">저장</button>
       </div>
       <div id="habitDisplay" style="font-size: 12.5px; color: #2563eb; background: #eff6ff; padding: 6px 8px; border-radius: 6px; display: none;"></div>
     </div>
   </div>
 
-  <!-- 캘린더 기록장 (오디오 및 분석 통합) -->
+  <!-- 캘린더 연습 기록장 (모든 기록 자동 연동 통합) -->
   <div class="card">
     <div class="card-title">📅 캘린더 연습 기록장</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">날짜를 누르면 녹음 파일과 AI 피드백이 함께 펼쳐집니다.</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">녹음, 피드백, 교정 문장이 하나의 세트로 자동 저장됩니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -237,7 +238,9 @@
   let sentenceCount = parseInt(localStorage.getItem('stat_sentence_count') || '0');
   let audioCount = parseInt(localStorage.getItem('stat_audio_count') || '0');
   let baList = JSON.parse(localStorage.getItem('ba_records') || '[]');
+  let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
   let habitNote = localStorage.getItem('habit_note') || '';
+  
   let lastAnalyzedBeforeText = ""; 
   let lastSuggestedAfterText = ""; 
   let lastLatestFeedback = "";
@@ -253,6 +256,7 @@
       display.textContent = '🎯 ' + habitNote;
     }
     renderBACards();
+    renderPhrases();
   }
 
   function saveHabitNote() {
@@ -265,10 +269,10 @@
     }
   }
 
-  // 통합 기록 추가 (음성 Blob URL 변환 저장 포함)
+  // 통합 기록 저장 함수
   function addFullRecord(before, after, feedback, audioBlobUrl) {
     const now = new Date();
-    const dateStr = `${now.getMonth()+1}/${now.getDate()}`;
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
 
     baList.unshift({ 
       date: dateStr, 
@@ -278,15 +282,13 @@
       audioUrl: audioBlobUrl || null
     });
     
-    // 로컬 스토리지 용량 초과 방지를 위해 오디오 URL은 최신 항목 위주로 관리하거나 세션 내 유지
     try {
       localStorage.setItem('ba_records', JSON.stringify(baList));
     } catch (e) {
-      // 용량 초과 시 오디오 URL을 제외하고 저장
       const lightList = baList.map(item => ({ ...item, audioUrl: null }));
       localStorage.setItem('ba_records', JSON.stringify(lightList));
     }
-    renderBACards();
+    updateDashboard();
   }
 
   function deleteBACard(globalIndex) {
@@ -294,7 +296,7 @@
     try {
       localStorage.setItem('ba_records', JSON.stringify(baList));
     } catch(e) {}
-    renderBACards();
+    updateDashboard();
   }
 
   function renderBACards() {
@@ -327,9 +329,12 @@
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 2px;">
                   <span style="cursor: pointer; font-size: 11px; color: #94a3b8;" onclick="deleteBACard(${r.originalIndex})">삭제</span>
                 </div>
-                <div class="ba-before">🔴 내가 말한 내용: ${r.before}</div>
-                <div class="ba-after">🟢 교정된 문장: ${r.after}</div>
-                ${r.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 요약:</strong><br>${r.feedback.replace(/<[^>]*>?/gm, '').substring(0, 100)}...</div>` : ''}
+                <div class="ba-before">🔴 내가 말한 문장: ${r.before}</div>
+                <div class="ba-after">
+                  <span>🟢 교정된 문장: ${r.after}</span>
+                  <button class="btn-secondary" style="font-size: 10px; padding: 2px 6px;" onclick="addSpecificPhrase('${encodeURIComponent(r.after)}')">⭐ 표현집 저장</button>
+                </div>
+                ${r.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 및 발음 분석:</strong><br>${r.feedback.replace(/<[^>]*>?/gm, '').substring(0, 150)}...</div>` : ''}
                 ${r.audioUrl ? `<audio controls src="${r.audioUrl}" class="ba-audio"></audio>` : ''}
               </div>
             `).join('')}
@@ -350,6 +355,9 @@
     if (!text) return alert('문장을 입력하거나 음성으로 말해 주세요.');
 
     lastAnalyzedBeforeText = text; 
+    sentenceCount++;
+    localStorage.setItem('stat_sentence_count', sentenceCount);
+
     const btn = document.getElementById('submitBtn');
     const resultBox = document.getElementById('resultBox');
     const actionPanel = document.getElementById('feedbackActionPanel');
@@ -364,7 +372,7 @@
 위 문장을 분석하여 한국어로 피드백을 제공해 주세요.
 반드시 아래 규칙을 지켜주세요:
 1. 첫 줄에 정확히 'SUGGESTED: [가장 자연스럽고 매끄러운 교정 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
-2. 그 아래부터는 상세한 교정 이유, 뉘앙스 및 발음 포인트를 한국어로 작성해 주세요.`;
+2. 그 아래부터는 상세한 교정 이유, 발음 포인트, 강세 및 뉘앙스를 한국어로 작성해 주세요.`;
 
     try {
       const rawResponse = await callGeminiAPI({ contents: [{ parts: [{ text: promptText }] }] });
@@ -381,9 +389,9 @@
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
-      // 텍스트 분석 결과도 자동으로 기록 저장
+      // 캘린더 기록 및 통계 자동 연동 저장
       addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, null);
-
+      updateDashboard();
     } catch (err) {
       resultBox.innerText = err.message;
     } finally {
@@ -398,7 +406,6 @@
     if (!lastAnalyzedBeforeText || !lastSuggestedAfterText) {
       return alert('먼저 AI 피드백을 받아주세요!');
     }
-
     document.getElementById('journalInput').value = lastSuggestedAfterText;
     await startDirectRecording();
   }
@@ -418,10 +425,6 @@
       }
       transcript = cleanSentence(transcript);
       if (!transcript) return;
-
-      sentenceCount++;
-      localStorage.setItem('stat_sentence_count', sentenceCount);
-      updateDashboard();
 
       const textarea = document.getElementById('journalInput');
       let currentText = textarea.value.trim();
@@ -500,9 +503,9 @@
       const base64Audio = reader.result.split(',')[1];
       const mimeType = blob.type.split(';')[0] || 'audio/webm';
 
-      const promptText = `첨부된 음성을 듣고 한국어로 상세히 피드백해 주세요.
-1. 첫 줄에 정확히 'SUGGESTED: [음성에서 감지된 올바른 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
-2. 그 아래부터는 발음 정확도, 강세, 억양 및 개선 포인트를 작성해 주세요.`;
+      const promptText = `첨부된 음성을 듣고 한국어로 상세히 발음 피드백해 주세요.
+1. 첫 줄에 정확히 'SUGGESTED: [음성에서 감지된 교정 영문장]' 형식으로 한 줄만 적어주세요 (마크다운 별표 기호 사용 금지).
+2. 그 아래부터는 발음, 강세, 리듬, 억양 및 개선 포인트를 작성해 주세요.`;
 
       try {
         const rawResponse = await callGeminiAPI({
@@ -521,9 +524,9 @@
         resultBox.innerHTML = formatMarkdown(cleanResponse);
         actionPanel.style.display = 'block';
 
-        // 음성 녹음과 분석 결과를 하나의 세트로 묶어서 캘린더 기록에 추가!
+        // 음성 녹음과 분석 결과 통합 기록 자동 추가
         addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, audioUrl);
-
+        updateDashboard();
       } catch (err) { resultBox.innerText = err.message; }
     };
   }
@@ -543,16 +546,42 @@
     window.speechSynthesis.speak(utterance);
   }
 
-  let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
+  function addCurrentToPhraseBook() {
+    if (!lastSuggestedAfterText) return alert('저장할 교정 문장이 없습니다.');
+    if (!phrases.includes(lastSuggestedAfterText)) {
+      phrases.push(lastSuggestedAfterText);
+      localStorage.setItem('my_phrases', JSON.stringify(phrases));
+      updateDashboard();
+      alert('⭐ My Phrase Book에 성공적으로 저장되었습니다!');
+    } else {
+      alert('이미 Phrase Book에 존재하는 표현입니다.');
+    }
+  }
+
+  function addSpecificPhrase(encodedText) {
+    const text = decodeURIComponent(encodedText);
+    if (!phrases.includes(text)) {
+      phrases.push(text);
+      localStorage.setItem('my_phrases', JSON.stringify(phrases));
+      updateDashboard();
+      alert('⭐ 표현집에 추가되었습니다!');
+    } else {
+      alert('이미 표현집에 존재합니다.');
+    }
+  }
+
   function renderPhrases() {
     const list = document.getElementById('phraseList');
+    if (phrases.length === 0) {
+      list.innerHTML = '<li style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 6px;">저장된 표현이 없습니다.</li>';
+      return;
+    }
     list.innerHTML = phrases.map((p, i) => `
       <li class="phrase-item">
         <span>${p}</span>
         <button class="btn-secondary" style="padding: 3px 6px; font-size: 11px;" onclick="deletePhrase(${i})">삭제</button>
       </li>
     `).join('');
-    updateDashboard();
   }
 
   function addPhraseManual() {
@@ -561,18 +590,17 @@
       phrases.push(input.value.trim());
       localStorage.setItem('my_phrases', JSON.stringify(phrases));
       input.value = '';
-      renderPhrases();
+      updateDashboard();
     }
   }
 
   function deletePhrase(i) {
     phrases.splice(i, 1);
     localStorage.setItem('my_phrases', JSON.stringify(phrases));
-    renderPhrases();
+    updateDashboard();
   }
 
   checkApiKeyStatus();
-  renderPhrases();
   updateDashboard();
 </script>
 
