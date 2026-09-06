@@ -148,7 +148,7 @@
   <!-- 캘린더 연습 기록장 -->
   <div class="card">
     <div class="card-title">📅 캘린더 연습 기록장</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">하루 단위의 기록이 하나의 폴더 안에 차곡차곡 쌓입니다.</div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">같은 날짜의 기록들은 하나의 날짜 폴더 안에 차곡차곡 쌓입니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -450,14 +450,11 @@
     }
   }
 
-  // 수정된 교정문장 재말하기 함수 (안정적인 비동기 실행 및 버튼 연동)
   async function applyAndRetry() {
     if (!lastSuggestedAfterText) {
       return alert('먼저 AI 피드백을 받아주세요!');
     }
     document.getElementById('journalInput').value = lastSuggestedAfterText;
-    
-    // 화면 상단으로 부드럽게 스이프트 후 녹음 시작
     window.scrollTo({ top: 0, behavior: 'smooth' });
     await startDirectRecording();
   }
