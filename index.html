@@ -300,6 +300,12 @@
   let lastLatestFeedback = "";
   let currentAudioBase64 = null; 
 
+  function incrementSentenceCount() {
+    sentenceCount++;
+    try { localStorage.setItem('stat_sentence_count', sentenceCount); } catch(e) {}
+    updateDashboard();
+  }
+
   function updateDashboard() {
     document.getElementById('statSentenceCount').textContent = sentenceCount + '개';
     document.getElementById('statAudioCount').textContent = audioCount + '회';
@@ -444,8 +450,7 @@
     if (!text) return alert('문장을 입력하거나 음성으로 말해 주세요.');
 
     lastAnalyzedBeforeText = text; 
-    sentenceCount++;
-    try { localStorage.setItem('stat_sentence_count', sentenceCount); } catch(e) {}
+    incrementSentenceCount();
 
     const btn = document.getElementById('submitBtn');
     const resultBox = document.getElementById('resultBox');
@@ -590,6 +595,8 @@
     const actionPanel = document.getElementById('feedbackActionPanel');
     resultBox.innerHTML = '🎧 AI가 발음을 분석하고 있습니다...';
     actionPanel.style.display = 'none';
+
+    incrementSentenceCount();
 
     const base64Data = base64AudioUrl.split(',')[1];
     const mimeType = blob.type.split(';')[0] || 'audio/webm';
