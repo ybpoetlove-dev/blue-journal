@@ -65,8 +65,6 @@ HTML
 
     .ba-before { color: #dc2626; background: #fee2e2; padding: 5px 7px; border-radius: 4px; margin-bottom: 6px; font-size: 12px; }
     .ba-feedback { background: #f1f5f9; padding: 8px; border-radius: 4px; margin-top: 6px; font-size: 12px; color: #0f172a; line-height: 1.4; word-break: break-word; }
-    .ba-audio-box { margin-top: 6px; background: #fff; padding: 6px; border-radius: 4px; border: 1px solid #e2e8f0; }
-    .ba-audio { margin-top: 2px; width: 100%; height: 36px; }
 
     .input-row { display: flex; gap: 6px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; padding: 7px 9px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13.5px; }
@@ -155,8 +153,11 @@ HTML
 
   <!-- 캘린더 연습 기록장 -->
   <div class="card">
-    <div class="card-title">📅 캘린더 연습 기록장</div>
-    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">항목을 클릭하면 상세 피드백과 녹음 파일을 확인할 수 있습니다.</div>
+    <div class="card-title">
+      <span>📅 캘린더 연습 기록장 (최근 30개 자동 보존)</span>
+      <button class="btn-secondary" style="font-size: 11px; padding: 2px 6px;" onclick="clearCalendarRecords()">전체 초기화</button>
+    </div>
+    <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">오래된 기록은 자동 정리되며, 항목을 클릭해 상세 피드백을 볼 수 있습니다.</div>
     <div id="baContainer" style="margin-top: 10px;"></div>
   </div>
 
@@ -217,12 +218,13 @@ HTML
       localStorage.setItem('gemini_api_key', key);
       alert('API Key가 성공적으로 저장되었습니다!');
     } catch (e) {
-      alert('브라우저 설정상 영구 저장은 불가하지만, 현재 세션 동안 정상 작동합니다.');
+      alert('브라우저 저장 공간이 부족합니다.');
     }
     checkApiKeyStatus();
   }
 
   function formatMarkdown(text) {
+    if (!text) return '';
     return text
       .replace(/^### (.*$)/gim, '<h3>$1</h3>')
       .replace(/^## (.*$)/gim, '<h3>$1</h3>')
@@ -275,7 +277,7 @@ HTML
         }
       }
     }
-    throw new Error('현재 구글 AI 서버에 사용자가 몰려 연결이 원활하지 않습니다. 몇 초 후 다시 눌러주세요.');
+    throw new Error('현재 구글 AI 서버 연결이 원활하지 않습니다. 잠시 후 다시 눌러주세요.');
   }
 
   function cleanSentence(text) {
@@ -292,32 +294,15 @@ HTML
     return `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
   }
 
-  function normalizeDateString(dateStr) {
-    if (!dateStr) return getTodayDateString();
-    let parts = dateStr.split(/[\/\.]\s*/);
-    if (parts.length === 2) {
-      const year = new Date().getFullYear();
-      const month = String(parts[0]).padStart(2, '0');
-      const day = String(parts[1]).padStart(2, '0');
-      return `${year}.${month}.${day}`;
-    } else if (parts.length === 3) {
-      const year = parts[0].length === 2 ? '20' + parts[0] : parts[0];
-      const month = String(parts[1]).padStart(2, '0');
-      const day = String(parts[2]).padStart(2, '0');
-      return `${year}.${month}.${day}`;
-    }
-    return dateStr;
-  }
-
   let sentenceCount = parseInt(localStorage.getItem('stat_sentence_count') || '0');
   let audioCount = parseInt(localStorage.getItem('stat_audio_count') || '0');
-  let rawBaList = JSON.parse(localStorage.getItem('ba_records') || '[]');
+  let baList = [];
   
-  let baList = rawBaList.map(item => ({
-    ...item,
-    date: normalizeDateString(item.date)
-  }));
-  try { localStorage.setItem('ba_records', JSON.stringify(baList)); } catch(e) {}
+  try {
+    baList = JSON.parse(localStorage.getItem('ba_records') || '[]');
+  } catch(e) {
+    baList = [];
+  }
 
   let phrases = JSON.parse(localStorage.getItem('my_phrases') || '[]');
   let habitNote = localStorage.getItem('habit_note') || '';
@@ -325,7 +310,6 @@ HTML
   let lastAnalyzedBeforeText = ""; 
   let lastSuggestedAfterText = ""; 
   let lastLatestFeedback = "";
-  let currentAudioBase64 = null; 
 
   function incrementSentenceCount() {
     sentenceCount++;
@@ -357,29 +341,47 @@ HTML
     }
   }
 
-  function addFullRecord(before, after, feedback, audioBase64) {
+  // 캘린더 기록 추가 (최대 30개까지만 보존, 초과 시 가장 오래된 기록 자동 삭제)
+  function addFullRecord(before, after, feedback) {
     const dateStr = getTodayDateString();
 
-    baList.unshift({ 
+    const newRecord = { 
+      id: Date.now(),
       date: dateStr, 
       before: before || '(텍스트 입력)', 
       after: after || before, 
-      feedback: feedback,
-      audioBase64: audioBase64 || null
-    });
-    
+      feedback: feedback || ''
+    };
+
+    baList.unshift(newRecord);
+
+    // 최대 30개 유지 (오래된 항목 자동 삭제)
+    if (baList.length > 30) {
+      baList = baList.slice(0, 30);
+    }
+
     try {
       localStorage.setItem('ba_records', JSON.stringify(baList));
     } catch (e) {
-      console.warn('Storage save warning:', e);
+      // 만에 하나 용량 제한에 걸리면 반으로 줄여서 저장 시도
+      baList = baList.slice(0, 15);
+      try { localStorage.setItem('ba_records', JSON.stringify(baList)); } catch(err) {}
     }
     updateDashboard();
   }
 
-  function deleteSingleAttempt(globalIndex) {
-    baList.splice(globalIndex, 1);
+  function deleteSingleAttempt(recordId) {
+    baList = baList.filter(item => item.id !== recordId);
     try { localStorage.setItem('ba_records', JSON.stringify(baList)); } catch(e) {}
     updateDashboard();
+  }
+
+  function clearCalendarRecords() {
+    if (confirm('캘린더에 저장된 모든 기록을 삭제하시겠습니까?')) {
+      baList = [];
+      localStorage.removeItem('ba_records');
+      updateDashboard();
+    }
   }
 
   function renderBACards() {
@@ -387,15 +389,15 @@ HTML
     if (!container) return;
 
     if (baList.length === 0) {
-      container.innerHTML = '<div style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 10px;">아직 저장된 기록이 없습니다. 녹음이나 피드백을 받아보세요!</div>';
+      container.innerHTML = '<div style="font-size: 12.5px; color: #94a3b8; text-align: center; padding: 10px;">아직 저장된 기록이 없습니다. 피드백을 받아보세요!</div>';
       return;
     }
 
     const byDate = {};
-    baList.forEach((item, originalIndex) => {
-      const dateKey = normalizeDateString(item.date);
+    baList.forEach(item => {
+      const dateKey = item.date || getTodayDateString();
       if (!byDate[dateKey]) byDate[dateKey] = [];
-      byDate[dateKey].push({ ...item, originalIndex });
+      byDate[dateKey].push(item);
     });
 
     let html = '';
@@ -443,14 +445,10 @@ HTML
                     </div>
                     <div class="attempt-body">
                       <div style="display: flex; justify-content: flex-end; margin-bottom: 4px;">
-                        <span style="cursor: pointer; font-size: 10.5px; color: #ef4444; font-weight: bold;" onclick="deleteSingleAttempt(${att.originalIndex})">이력 삭제</span>
+                        <span style="cursor: pointer; font-size: 10.5px; color: #ef4444; font-weight: bold;" onclick="deleteSingleAttempt(${att.id})">이력 삭제</span>
                       </div>
                       <div class="ba-before">🔴 내가 말한 문장: ${att.before}</div>
                       ${att.feedback ? `<div class="ba-feedback">💡 <strong>AI 피드백 및 분석:</strong><br>${formatMarkdown(att.feedback)}</div>` : ''}
-                      <div class="ba-audio-box">
-                        <div style="font-size: 11px; color: #64748b; margin-bottom: 2px;">🎙️ 녹음 파일 재생:</div>
-                        ${att.audioBase64 ? `<audio controls preload="metadata" src="${att.audioBase64}" class="ba-audio"></audio>` : '<div style="font-size: 11px; color: #94a3b8; padding: 2px 0;">(텍스트 입력 기록)</div>'}
-                      </div>
                     </div>
                   </div>
                 `).join('')}
@@ -512,11 +510,10 @@ HTML
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
-      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, currentAudioBase64);
+      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse);
     } catch (err) {
       resultBox.innerText = err.message;
-      // API 오류 시에도 입력한 텍스트 기록은 캘린더에 남도록 처리
-      addFullRecord(lastAnalyzedBeforeText, lastAnalyzedBeforeText, 'API 요청 실패로 인한 기본 저장 기록', currentAudioBase64);
+      addFullRecord(lastAnalyzedBeforeText, lastAnalyzedBeforeText, 'API 요청 오류 발생 (기록 보존)');
     } finally {
       setTimeout(() => {
         btn.disabled = false;
@@ -601,16 +598,14 @@ HTML
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          currentAudioBase64 = reader.result; 
-          
-          player.src = currentAudioBase64;
+          player.src = reader.result;
           player.style.display = "block";
           
           audioCount++;
           try { localStorage.setItem('stat_audio_count', audioCount); } catch(e) {}
           updateDashboard();
 
-          await analyzeAudioPronunciation(audioBlob, currentAudioBase64);
+          await analyzeAudioPronunciation(audioBlob, reader.result);
         };
       };
 
@@ -653,10 +648,10 @@ HTML
       resultBox.innerHTML = formatMarkdown(cleanResponse);
       actionPanel.style.display = 'block';
 
-      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse, base64AudioUrl);
+      addFullRecord(lastAnalyzedBeforeText, lastSuggestedAfterText, cleanResponse);
     } catch (err) {
       resultBox.innerText = err.message;
-      addFullRecord('(음성 녹음)', '(음성 녹음)', '분석 실패로 인한 기본 녹음 기록', base64AudioUrl);
+      addFullRecord('(음성 녹음)', '(음성 녹음)', '분석 실패로 인한 기본 기록');
     }
   }
 
